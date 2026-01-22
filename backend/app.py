@@ -12,12 +12,13 @@ All security logic, vulnerability rules, and design decisions were manually
 defined and implemented by the developer.
 """
 
+import os
+import bcrypt
+from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import os
-from datetime import datetime
 
 # Import custom modules
 from modules.scanner import AttackSurfaceScanner
@@ -53,6 +54,68 @@ def health_check():
         'status': 'healthy',
         'timestamp': datetime.utcnow().isoformat()
     }), 200
+
+
+# --- Authentication Endpoints ---
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """Register a new user with hashed password"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        name = data.get('name')
+
+        if not email or not password or not name:
+            return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+
+        # Check if user exists
+        if db.get_user_by_email(email):
+            return jsonify({'success': False, 'message': 'Email already registered'}), 409
+
+        # Hash password
+        hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        user = db.create_user(email, hashed_pw, name)
+        
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.name
+            }
+        }), 201
+    except Exception as e:
+        print(f"Registration error: {str(e)}")
+        return jsonify({'success': False, 'message': 'Registration failed'}), 500
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Authenticate user and return profile"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        user = db.get_user_by_email(email)
+        
+        if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'name': user.name
+                }
+            }), 200
+        
+        return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+    except Exception as e:
+        print(f"Login error: {str(e)}")
+        return jsonify({'success': False, 'message': 'Login failed'}), 500
 
 
 @app.route('/api/scan', methods=['POST'])

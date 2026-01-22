@@ -145,13 +145,27 @@ function DashboardHome() {
                 {/* Score */}
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center relative hover:border-blue-300 transition-all shadow-sm">
                     <h3 className="text-slate-500 text-xs font-medium absolute top-6 left-6">Health</h3>
-                    <div className="relative w-32 h-16 mt-4 overflow-hidden">
-                        <div className="w-32 h-32 rounded-full border-[12px] border-slate-100 border-b-0 absolute top-0 left-0"></div>
-                        <div
-                            className="w-32 h-32 rounded-full border-[12px] border-green-500 border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0 transition-all duration-1000 origin-bottom"
-                            style={{ transform: `rotate(${Math.max(-180, -45 - (data.stats.critical_risks * 10))}deg)` }}
-                        ></div>
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
+                    <div className="relative w-32 h-16 mt-4">
+                        <svg viewBox="0 0 100 50" className="w-full h-full">
+                            <path
+                                d="M 10 45 A 40 40 0 0 1 90 45"
+                                fill="transparent"
+                                stroke="#f1f5f9"
+                                strokeWidth="10"
+                                strokeLinecap="round"
+                            />
+                            <path
+                                d="M 10 45 A 40 40 0 0 1 90 45"
+                                fill="transparent"
+                                stroke="#22c55e"
+                                strokeWidth="10"
+                                strokeLinecap="round"
+                                strokeDasharray="126"
+                                strokeDashoffset={126 - (Math.max(0, 100 - (data.stats.critical_risks * 5)) / 100) * 126}
+                                className="transition-all duration-1000 ease-out"
+                            />
+                        </svg>
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center pb-1">
                             <span className="text-2xl font-bold text-slate-900">{Math.max(0, 100 - (data.stats.critical_risks * 5))}</span>
                         </div>
                     </div>

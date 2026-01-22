@@ -1,5 +1,6 @@
+import axios from 'axios'
 import { useState } from 'react'
-import { Shield, Mail, Lock, AlertCircle, ArrowLeft } from 'lucide-react'
+import { User, Mail, Lock, AlertCircle, ArrowLeft } from 'lucide-react'
 import LogoIcon from '../components/LogoIcon'
 
 interface AuthPageProps {
@@ -7,11 +8,8 @@ interface AuthPageProps {
     onBack: () => void
 }
 
-/**
- * DefendX Auth Page
- * Sophisticated 3D glassmorphic design for a premium first impression.
- * Optimized for hackathon demos with 'Demo Login' feature.
- */
+const API_BASE_URL = 'http://127.0.0.1:5000/api'
+
 export default function AuthPage({ onLoginSuccess, onBack }: AuthPageProps) {
     const [mode, setMode] = useState<'login' | 'signup'>('login')
     const [isLoading, setIsLoading] = useState(false)
@@ -22,48 +20,27 @@ export default function AuthPage({ onLoginSuccess, onBack }: AuthPageProps) {
         name: ''
     })
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
         setError(null)
 
-        // Mock Auth Logic using localStorage
-        setTimeout(() => {
-            const usersJson = localStorage.getItem('defendx_users')
-            const users = usersJson ? JSON.parse(usersJson) : []
+        try {
+            const endpoint = mode === 'login' ? '/auth/login' : '/auth/register'
+            const response = await axios.post(`${API_BASE_URL}${endpoint}`, formData)
 
-            if (mode === 'signup') {
-                // Check if user already exists
-                if (users.find((u: any) => u.email === formData.email)) {
-                    setError('An account with this email already exists.')
-                    setIsLoading(false)
-                    return
-                }
-
-                // Register new user
-                const newUser = {
-                    email: formData.email,
-                    password: formData.password,
-                    name: formData.name
-                }
-                localStorage.setItem('defendx_users', JSON.stringify([...users, newUser]))
-                localStorage.setItem('defendx_current_user', JSON.stringify(newUser))
-                setIsLoading(false)
+            if (response.data.success) {
+                // Store in localStorage for session persistence
+                localStorage.setItem('defendx_current_user', JSON.stringify(response.data.user))
                 onLoginSuccess()
-            } else {
-                // Login check
-                const user = users.find((u: any) => u.email === formData.email && u.password === formData.password)
-
-                if (user) {
-                    localStorage.setItem('defendx_current_user', JSON.stringify(user))
-                    setIsLoading(false)
-                    onLoginSuccess()
-                } else {
-                    setError('Invalid email or password. Please register if you haven\'t already.')
-                    setIsLoading(false)
-                }
             }
-        }, 1200)
+        } catch (err: any) {
+            console.error('Auth error:', err)
+            const message = err.response?.data?.message || 'Authentication failed. Please check your connection.'
+            setError(message)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,7 +98,7 @@ export default function AuthPage({ onLoginSuccess, onBack }: AuthPageProps) {
                                         required
                                     />
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">
-                                        <Shield size={20} />
+                                        <User size={20} />
                                     </span>
                                 </div>
                             </div>
@@ -184,7 +161,7 @@ export default function AuthPage({ onLoginSuccess, onBack }: AuthPageProps) {
                                 <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
                             ) : (
                                 <>
-                                    <span>{mode === 'login' ? 'Authenticate' : 'Create Command Center'}</span>
+                                    <span>{mode === 'login' ? 'Sign in' : 'Create Account'}</span>
                                 </>
                             )}
                         </button>
@@ -197,7 +174,7 @@ export default function AuthPage({ onLoginSuccess, onBack }: AuthPageProps) {
                                 onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
                                 className="text-blue-600 font-bold hover:underline"
                             >
-                                {mode === 'login' ? 'Register Now' : 'Login instead'}
+                                {mode === 'login' ? 'Register Now' : 'Sign in'}
                             </button>
                         </p>
                     </div>
