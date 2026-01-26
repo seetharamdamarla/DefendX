@@ -21,11 +21,17 @@ DefendX is a comprehensive security assessment platform designed to automate the
 
 ### Key Features
 
-- **Automated Scanning**: Real-time detection of OWASP Top 10 vulnerabilities including SQLi, XSS, and Sensitive Data Exposure.
+- **Automated Scanning**: Real-time detection of OWASP Top 10 vulnerabilities including:
+    - **SQL Injection (SQLi)**: Pattern-based detection of potential injection points.
+    - **Cross-Site Scripting (XSS)**: Identification of reflected and stored XSS risks.
+    - **Sensitive Information Disclosure**: Detection of exposed API keys, PII, and debug info.
+    - **CORS Misconfiguration**: Analysis of permissive Access-Control headers.
 - **Security Operations Center (SOC)**: High-performance dashboard featuring risk scoring, threat trends, and target monitoring with SVG-driven health metrics.
-- **Cloud-Native Database**: Scalable **PostgreSQL** integration via **Supabase** for high-integrity data storage.
-- **Production Authentication**: Secure registration and sign-in system with **Bcrypt** password hashing and **Prisma ORM** session management.
-- **Multi-layered Reconnaissance**: Deep-crawl engine for mapping attack surfaces and identifying misconfigured security headers.
+- **Robust Backend Architecture**: 
+    - **Connection Pooling**: Optimized database connection management with timeout prevention and auto-reconnection logic.
+    - **Graceful Shutdown**: Signal handling ensures clean resource release and connection closure.
+    - **Production Authentication**: Secure registration and sign-in system with **Bcrypt** password hashing.
+- **Cloud-Native Database**: Scalable **PostgreSQL** integration via **Supabase** for high-integrity data storage using **Prisma ORM**.
 - **Premium Design**: State-of-the-art glassmorphic UI with smooth animations and responsive layouts.
 
 ---
@@ -33,9 +39,9 @@ DefendX is a comprehensive security assessment platform designed to automate the
 ## Tech Stack
 
 **Backend**: Python 3.9+, Flask, **Prisma ORM (Python)**, Bcrypt  
-**Database**: **PostgreSQL** (Managed via Supabase)  
+**Database**: **PostgreSQL** (Managed via Supabase) with Connection Pooling  
 **Frontend**: React 18, Vite, TailwindCSS, Lucide Icons, Glassmorphism  
-**Security Engine**: Rule-based vulnerability modules, URL Validation, Rate Limiting (Flask-Limiter)
+**Security Engine**: Modular vulnerability detection system, URL Validation, Rate Limiting (Flask-Limiter)
 
 ---
 
@@ -44,12 +50,15 @@ DefendX is a comprehensive security assessment platform designed to automate the
 ```
 DefendX/
 ├── backend/                # Flask API & Scanner Engine
-│   ├── prisma/            # Prisma Schema & Database Migrations
-│   ├── database/          # Prisma database wrapper logic
+│   ├── prisma/            # Prisma Schema & Database Configuration
+│   │   └── schema.prisma  # Database models & connection settings
+│   ├── database/          # Production-grade database wrapper
+│   │   └── db.py          # Connection lifecycle management
 │   ├── modules/           # Vulnerability detection modules
-│   │   └── checks/        # Specific security check logic
-│   ├── .env               # Environment variables (Database URL)
-│   └── app.py             # Main entry point & API routes
+│   │   ├── checks/        # Specific security check logic (SQLi, XSS, etc.)
+│   │   └── scanner.py     # Main scanning engine
+│   ├── .env               # Environment variables
+│   └── app.py             # Main entry point with signal handling
 ├── frontend/              # React Application
 │   ├── src/
 │   │   ├── components/    # Reusable UI & Layout components
@@ -86,10 +95,14 @@ DefendX/
    ```
 
 3. **Database Configuration**
-   - Configure your PostgreSQL connection and other environment variables in a `.env` file within the `backend/` directory.
+   - Create a `.env` file in the `backend/` directory.
+   - Add your connection string with pooling parameters:
+     ```env
+     DATABASE_URL="postgresql://user:password@host:port/database?pgbouncer=true&connection_limit=20&pool_timeout=30"
+     ```
    - Generate the Prisma Client:
      ```bash
-     python -m prisma generate
+     prisma generate
      ```
 
 4. **Frontend Setup**
@@ -109,7 +122,7 @@ DefendX/
 **Base URL**: `http://localhost:5000/api`
 
 ### Authentication
-- `POST /auth/register` - Create a new secure account (Bcrypt hashed)
+- `POST /auth/register` - Create a new secure account
 - `POST /auth/login` - Authenticate user and retrieve profile data
 
 ### Security Operations
@@ -121,6 +134,13 @@ DefendX/
 ### System & Compliance
 - `GET /health` - System health status and timestamp
 - `GET /disclaimer` - Ethical use guidelines and requirements
+
+---
+
+## Troubleshooting
+
+- **Database Timeout Errors**: If you encounter connection pool timeouts, ensure your `DATABASE_URL` includes the `pool_timeout=30` and `connection_limit` parameters as shown in the setup instructions. The logic in `db.py` handles auto-reconnection, but correct configuration is required for high concurrency.
+- **Connection Refused**: Ensure your IP is allowed in your cloud database provider's firewall settings (e.g., Supabase dashboard).
 
 ---
 
