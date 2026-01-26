@@ -14,6 +14,8 @@ defined and implemented by the developer.
 
 import os
 import bcrypt
+import signal
+import sys
 from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -285,7 +287,28 @@ def get_disclaimer():
     }), 200
 
 
+# Signal handler for graceful shutdown
+def shutdown_handler(signum, frame):
+    """Handle shutdown signals to cleanup database connections"""
+    print("\n🛑 Shutting down gracefully...")
+    db.disconnect()
+    sys.exit(0)
+
+
+# Register signal handlers
+signal.signal(signal.SIGINT, shutdown_handler)
+signal.signal(signal.SIGTERM, shutdown_handler)
+
+
 if __name__ == '__main__':
     # Development server only
     # In production, use gunicorn or similar WSGI server
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    try:
+        app.run(debug=True, host='127.0.0.1', port=5000)
+    except KeyboardInterrupt:
+        print("\n🛑 Server stopped by user")
+        db.disconnect()
+    except Exception as e:
+        print(f"❌ Server error: {str(e)}")
+        db.disconnect()
+        raise

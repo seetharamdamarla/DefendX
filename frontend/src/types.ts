@@ -85,6 +85,24 @@ export interface DashboardStats {
         date: string
         count: number
     }[]
+    health_score?: {
+        health_score: number
+        letter_grade: string
+        grade_color: string
+        risk_points: number
+        status: string
+        breakdown: {
+            total_vulnerabilities: number
+            by_severity: {
+                CRITICAL: number
+                HIGH: number
+                MEDIUM: number
+                LOW: number
+            }
+            weighted_risk: number
+        }
+        recommendations: string[]
+    }
 }
 
 export interface RecentScanItem {
@@ -116,4 +134,9 @@ export interface RiskItem {
     category: string
     description: string
     remediation: string
+    evidence: {
+        url?: string
+        [key: string]: any
+    }
+    references: string[]
 }

@@ -17,17 +17,26 @@ class Database:
     """
     
     def __init__(self):
-        """Initialize Prisma client"""
+        """Initialize Prisma client and establish connection"""
         self.prisma = Prisma()
-        # Note: In a production app, we would use a more robust lifecycle management
-        # For this migration, we'll handle connection in the methods or once at start
-        self._connected = False
+        try:
+            self.prisma.connect()
+            self._connected = True
+            print("✓ Database connected successfully")
+        except Exception as e:
+            print(f"✗ Database connection failed: {str(e)}")
+            self._connected = False
 
     def _ensure_connection(self):
         """Internal helper to ensure db is connected"""
         if not self._connected:
-            self.prisma.connect()
-            self._connected = True
+            try:
+                self.prisma.connect()
+                self._connected = True
+                print("✓ Database reconnected")
+            except Exception as e:
+                print(f"✗ Database reconnection failed: {str(e)}")
+                raise
 
     def store_scan_result(self, url: str, results: dict, timestamp: datetime, user_id: str = None) -> str:
         """
@@ -96,7 +105,7 @@ class Database:
         return scans
 
     def get_dashboard_stats(self) -> dict:
-        """Get aggregated stats for dashboard"""
+        """Get aggregated stats for dashboard with professional health score"""
         self._ensure_connection()
         
         all_scans = self.prisma.scan.find_many()
@@ -105,6 +114,7 @@ class Database:
         unique_targets = set()
         total_vulns = {'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
         scans_by_date = {}
+        all_vulnerabilities = []  # Collect all vulnerabilities for health score
         
         for s in all_scans:
             target = s.targetUrl
@@ -118,6 +128,10 @@ class Database:
                 if severity in total_vulns:
                     total_vulns[severity] += count
             
+            # Collect all vulnerabilities for health score calculation
+            vulnerabilities = results.get('vulnerabilities', [])
+            all_vulnerabilities.extend(vulnerabilities)
+            
             # Group by date for trends
             date_str = timestamp.isoformat().split('T')[0]
             scans_by_date[date_str] = scans_by_date.get(date_str, 0) + 1
@@ -126,12 +140,18 @@ class Database:
         sorted_dates = sorted(scans_by_date.keys())[-7:]
         trends = [{'date': date, 'count': scans_by_date[date]} for date in sorted_dates]
         
+        # Calculate professional health score
+        from modules.health_score import SecurityHealthScoreCalculator
+        calculator = SecurityHealthScoreCalculator()
+        health_data = calculator.calculate_health_score(all_vulnerabilities)
+        
         return {
             'total_scans': total_scans,
             'active_targets': len(unique_targets),
             'critical_risks': total_vulns.get('HIGH', 0),
             'severity_distribution': total_vulns,
-            'trends': trends
+            'trends': trends,
+            'health_score': health_data  # New professional health score data
         }
 
     def get_targets(self) -> list:
@@ -184,7 +204,9 @@ class Database:
                     'severity': v.get('severity'),
                     'category': v.get('category'),
                     'description': v.get('description'),
-                    'remediation': v.get('remediation')
+                    'remediation': v.get('remediation'),
+                    'evidence': v.get('evidence', {}),
+                    'references': v.get('references', [])
                 })
                 
         severity_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
@@ -208,3 +230,13 @@ class Database:
         """Find user for login"""
         self._ensure_connection()
         return self.prisma.user.find_unique(where={'email': email})
+
+    def disconnect(self):
+        """Disconnect from database - call this on app shutdown"""
+        if self._connected:
+            try:
+                self.prisma.disconnect()
+                self._connected = False
+                print("✓ Database disconnected successfully")
+            except Exception as e:
+                print(f"✗ Database disconnect error: {str(e)}")

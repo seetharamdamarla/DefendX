@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Activity, ArrowUpRight, CheckCircle, AlertTriangle, Play, Loader, Globe } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
+import VulnerabilityDetailModal from '../components/VulnerabilityDetailModal'
 import type { DashboardData, RiskItem, TargetItem, RecentScanItem } from '../types'
 
 interface DashboardPageProps {
@@ -11,6 +12,7 @@ interface DashboardPageProps {
 export default function DashboardPage({ onNavigate }: DashboardPageProps) {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'scans' | 'risks' | 'targets'>('dashboard')
     const [user, setUser] = useState<{ name: string } | null>(null)
+    const [selectedVuln, setSelectedVuln] = useState<any | null>(null)
 
     useEffect(() => {
         const storedUser = localStorage.getItem('defendx_current_user')
@@ -69,8 +71,15 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
                 {activeTab === 'dashboard' && <DashboardHome />}
                 {activeTab === 'scans' && <ScansView />}
-                {activeTab === 'risks' && <RisksView />}
+                {activeTab === 'risks' && <RisksView onRiskClick={(risk) => setSelectedVuln(risk)} />}
                 {activeTab === 'targets' && <TargetsView />}
+
+                {selectedVuln && (
+                    <VulnerabilityDetailModal
+                        vulnerability={selectedVuln as any}
+                        onClose={() => setSelectedVuln(null)}
+                    />
+                )}
             </main>
         </div>
     )
@@ -142,33 +151,72 @@ function DashboardHome() {
                         <span className="text-xs text-slate-400 mb-1">Monitored</span>
                     </div>
                 </div>
-                {/* Score */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center relative hover:border-blue-300 transition-all shadow-sm">
-                    <h3 className="text-slate-500 text-xs font-medium absolute top-6 left-6">Health</h3>
-                    <div className="relative w-32 h-16 mt-4">
-                        <svg viewBox="0 0 100 50" className="w-full h-full">
-                            <path
-                                d="M 10 45 A 40 40 0 0 1 90 45"
-                                fill="transparent"
-                                stroke="#f1f5f9"
-                                strokeWidth="10"
-                                strokeLinecap="round"
-                            />
-                            <path
-                                d="M 10 45 A 40 40 0 0 1 90 45"
-                                fill="transparent"
-                                stroke="#22c55e"
-                                strokeWidth="10"
-                                strokeLinecap="round"
-                                strokeDasharray="126"
-                                strokeDashoffset={126 - (Math.max(0, 100 - (data.stats.critical_risks * 5)) / 100) * 126}
-                                className="transition-all duration-1000 ease-out"
-                            />
-                        </svg>
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center pb-1">
-                            <span className="text-2xl font-bold text-slate-900">{Math.max(0, 100 - (data.stats.critical_risks * 5))}</span>
+                {/* Security Health Score - Professional Grade */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center hover:border-blue-300 transition-all shadow-sm">
+
+                    {data.stats.health_score ? (
+                        <div className="flex flex-col items-center gap-4 w-full">
+                            {/* Title */}
+                            <h3 className="text-slate-500 text-xs font-medium uppercase tracking-wider">Security Health</h3>
+
+                            {/* Letter Grade Circle */}
+                            <div className={`w-28 h-28 rounded-full flex items-center justify-center border-[6px] transition-all ${data.stats.health_score.grade_color === 'emerald' || data.stats.health_score.grade_color === 'green' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-emerald-200' :
+                                data.stats.health_score.grade_color === 'lime' || data.stats.health_score.grade_color === 'yellow' ? 'bg-yellow-50 border-yellow-500 text-yellow-700 shadow-yellow-200' :
+                                    data.stats.health_score.grade_color === 'amber' || data.stats.health_score.grade_color === 'orange' ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-orange-200' :
+                                        'bg-red-50 border-red-500 text-red-700 shadow-red-200'
+                                } shadow-lg`}>
+                                <div className="text-center">
+                                    <div className="text-4xl font-black tracking-tight">{data.stats.health_score.letter_grade}</div>
+                                    <div className="text-xs font-bold mt-1 opacity-75">{data.stats.health_score.health_score}</div>
+                                </div>
+                            </div>
+
+                            {/* Status Section */}
+                            <div className="text-center space-y-1">
+                                <div className="flex items-center gap-2 justify-center">
+                                    {/* Color Indicator Dot */}
+                                    <div className={`w-2 h-2 rounded-full ${data.stats.health_score.grade_color === 'emerald' || data.stats.health_score.grade_color === 'green' ? 'bg-emerald-500' :
+                                        data.stats.health_score.grade_color === 'lime' || data.stats.health_score.grade_color === 'yellow' ? 'bg-yellow-500' :
+                                            data.stats.health_score.grade_color === 'amber' || data.stats.health_score.grade_color === 'orange' ? 'bg-orange-500' :
+                                                'bg-red-500'
+                                        }`}></div>
+                                    <span className="text-sm font-bold text-slate-900 tracking-wide">{data.stats.health_score.status}</span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-medium tracking-wide">
+                                    {data.stats.health_score.risk_points} Risk Points
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        // Fallback to old simple score
+                        <div className="flex flex-col items-center gap-4 w-full">
+                            <h3 className="text-slate-500 text-xs font-medium uppercase tracking-wider">Security Health</h3>
+                            <div className="relative w-32 h-16">
+                                <svg viewBox="0 0 100 50" className="w-full h-full">
+                                    <path
+                                        d="M 10 45 A 40 40 0 0 1 90 45"
+                                        fill="transparent"
+                                        stroke="#f1f5f9"
+                                        strokeWidth="10"
+                                        strokeLinecap="round"
+                                    />
+                                    <path
+                                        d="M 10 45 A 40 40 0 0 1 90 45"
+                                        fill="transparent"
+                                        stroke="#22c55e"
+                                        strokeWidth="10"
+                                        strokeLinecap="round"
+                                        strokeDasharray="126"
+                                        strokeDashoffset={126 - (Math.max(0, 100 - (data.stats.critical_risks * 5)) / 100) * 126}
+                                        className="transition-all duration-1000 ease-out"
+                                    />
+                                </svg>
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center pb-1">
+                                    <span className="text-2xl font-bold text-slate-900">{Math.max(0, 100 - (data.stats.critical_risks * 5))}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -291,7 +339,7 @@ function ScansView() {
     )
 }
 
-function RisksView() {
+function RisksView({ onRiskClick }: { onRiskClick: (risk: RiskItem) => void }) {
     const [risks, setRisks] = useState<RiskItem[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -301,14 +349,14 @@ function RisksView() {
         }).finally(() => setLoading(false))
     }, [])
 
-    if (loading) return <Loader className="animate-spin m-auto" />
+    if (loading) return <div className="flex justify-center p-12"><Loader className="animate-spin text-purple-500" /></div>
 
     return (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
             <table className="w-full text-left">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200">
                     <tr>
-                        <th className="p-4 font-medium">Severity</th>
+                        <th className="p-4 font-medium text-center w-24">Severity</th>
                         <th className="p-4 font-medium">Vulnerability</th>
                         <th className="p-4 font-medium">Target</th>
                         <th className="p-4 font-medium">Detected</th>
@@ -316,18 +364,24 @@ function RisksView() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                     {risks.map((risk, i) => (
-                        <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-4">
-                                <span className={`px-2 py-1 rounded text-xs font-bold ${risk.severity === 'HIGH' ? 'bg-red-50 text-red-600 border border-red-100' :
+                        <tr
+                            key={i}
+                            className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                            onClick={() => onRiskClick(risk)}
+                        >
+                            <td className="p-4 text-center">
+                                <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider ${risk.severity === 'HIGH' ? 'bg-red-50 text-red-600 border border-red-100' :
                                     risk.severity === 'MEDIUM' ? 'bg-yellow-50 text-yellow-700 border border-yellow-100' : 'bg-blue-50 text-blue-600 border border-blue-100'
                                     }`}>{risk.severity}</span>
                             </td>
                             <td className="p-4">
-                                <div className="font-medium text-slate-900">{risk.title}</div>
-                                <div className="text-xs text-slate-500 mt-1">{risk.category}</div>
+                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{risk.title}</div>
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5 uppercase tracking-tight">{risk.category}</div>
                             </td>
-                            <td className="p-4 text-slate-600 text-sm">{risk.target}</td>
-                            <td className="p-4 text-slate-400 text-xs">{new Date(risk.discovered_at).toLocaleDateString()}</td>
+                            <td className="p-4">
+                                <span className="text-slate-600 text-sm font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{risk.target}</span>
+                            </td>
+                            <td className="p-4 text-slate-400 text-xs font-medium">{new Date(risk.discovered_at).toLocaleDateString()}</td>
                         </tr>
                     ))}
                     {risks.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-slate-400">No risks identified</td></tr>}

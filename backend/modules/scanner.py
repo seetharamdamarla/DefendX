@@ -20,6 +20,9 @@ from modules.checks.security_headers import SecurityHeadersCheck
 from modules.checks.xss_reflection import XSSReflectionCheck
 from modules.checks.directory_exposure import DirectoryExposureCheck
 from modules.checks.cookie_security import CookieSecurityCheck
+from modules.checks.sql_injection import SQLInjectionCheck
+from modules.checks.cors_misconfiguration import CORSMisconfigurationCheck
+from modules.checks.information_disclosure import InformationDisclosureCheck
 
 
 class AttackSurfaceScanner:
@@ -43,12 +46,18 @@ class AttackSurfaceScanner:
         self.discovered_forms = []
         
         # Initialize vulnerability checkers
-        # Each checker implements specific, rule-based detection logic
+        # Professional-grade checks using industry-standard techniques
         self.checkers = [
+            # Original checks
             SecurityHeadersCheck(),
             XSSReflectionCheck(),
             DirectoryExposureCheck(),
-            CookieSecurityCheck()
+            CookieSecurityCheck(),
+            
+            # Professional pentesting checks (NEW)
+            SQLInjectionCheck(),              # OWASP #1 - Critical
+            CORSMisconfigurationCheck(),      # API security - High
+            InformationDisclosureCheck(),     # Reconnaissance - Medium
         ]
     
     def execute_scan(self) -> Dict[str, Any]:
