@@ -20,13 +20,13 @@ export default function LogoIcon({ size = 24, className = '' }: LogoIconProps) {
             {/* Gradient Definitions */}
             <defs>
                 <linearGradient id="shield-main" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#06b6d4" />
-                    <stop offset="50%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#0ea5e9" />
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="50%" stopColor="#e5e7eb" />
+                    <stop offset="100%" stopColor="#ffffff" />
                 </linearGradient>
                 <linearGradient id="shield-accent" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#0ea5e9" />
-                    <stop offset="100%" stopColor="#06b6d4" />
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="100%" stopColor="#d1d5db" />
                 </linearGradient>
             </defs>
 
@@ -115,7 +115,7 @@ export default function LogoIcon({ size = 24, className = '' }: LogoIconProps) {
                 cx="12"
                 cy="12"
                 r="1"
-                fill="#3b82f6"
+                fill="#ffffff"
                 opacity="0.9"
             >
                 {/* Subtle pulse animation */}

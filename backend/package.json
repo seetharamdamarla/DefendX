@@ -1,0 +1,15 @@
+{
+    "name": "defendx-backend",
+    "version": "1.0.0",
+    "description": "Backend for DefendX",
+    "main": "app.py",
+    "scripts": {
+        "dev": "python app.py",
+        "start": "python app.py",
+        "db:push": "prisma db push",
+        "db:generate": "prisma generate"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}

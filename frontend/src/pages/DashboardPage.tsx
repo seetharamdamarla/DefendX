@@ -11,17 +11,7 @@ interface DashboardPageProps {
 
 export default function DashboardPage({ onNavigate }: DashboardPageProps) {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'scans' | 'risks' | 'targets'>('dashboard')
-    const [user, setUser] = useState<{ name: string } | null>(null)
     const [selectedVuln, setSelectedVuln] = useState<any | null>(null)
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem('defendx_current_user')
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
-        }
-    }, [])
-
-    const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U'
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex overflow-hidden">
@@ -29,7 +19,6 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 activeTab={activeTab as any}
                 onTabChange={(tab: any) => setActiveTab(tab)}
                 onLogout={() => {
-                    localStorage.removeItem('defendx_current_user')
                     onNavigate('landing')
                 }}
             />
@@ -58,11 +47,11 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
                         {/* Simplified User Identity */}
                         <div className="flex items-center gap-4">
-                            <span className="text-base font-black text-slate-900 tracking-tight">{user?.name || 'User'}</span>
+                            <span className="text-base font-black text-slate-900 tracking-tight">Analyst</span>
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-blue-600 blur-md opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
                                 <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-base font-black border-2 border-white shadow-xl transform group-hover:scale-105 transition-all duration-300 cursor-default">
-                                    {userInitial}
+                                    A
                                 </div>
                             </div>
                         </div>

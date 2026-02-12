@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+
 import { LayoutDashboard, Shield, Activity, Target, LogOut } from 'lucide-react'
 import LogoIcon from './LogoIcon'
 
@@ -9,17 +9,6 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
-    const [user, setUser] = useState<{ name: string } | null>(null)
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem('defendx_current_user')
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
-        }
-    }, [])
-
-    const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U'
-    const shortName = user?.name ? (user.name.split(' ').length > 1 ? `${user.name.split(' ')[0][0]}. ${user.name.split(' ').slice(-1)[0]}` : user.name) : 'User'
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -60,9 +49,9 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
             <div className="p-4 border-t border-slate-100 flex flex-col gap-4">
                 <div className="flex items-center gap-3 px-2">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-[10px] font-black shadow-sm">
-                        {userInitial}
+                        A
                     </div>
-                    <span className="text-sm font-bold text-slate-900 truncate">{shortName}</span>
+                    <span className="text-sm font-bold text-slate-900 truncate">Security Analyst</span>
                 </div>
 
                 <button
@@ -70,7 +59,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all group"
                 >
                     <LogOut className="w-4 h-4" />
-                    <span className="font-semibold text-sm">Sign Out</span>
+                    <span className="font-semibold text-sm">Exit Dashboard</span>
                 </button>
             </div>
         </div>

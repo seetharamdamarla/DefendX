@@ -38,7 +38,7 @@ class Database:
                 print(f"✗ Database reconnection failed: {str(e)}")
                 raise
 
-    def store_scan_result(self, url: str, results: dict, timestamp: datetime, user_id: str = None) -> str:
+    def store_scan_result(self, url: str, results: dict, timestamp: datetime) -> str:
         """
         Store scan results using Prisma
         """
@@ -55,8 +55,7 @@ class Database:
                 'id': scan_id,
                 'targetUrl': url,
                 'scanTimestamp': timestamp,
-                'results': Json(results),
-                'userId': user_id
+                'results': Json(results)
             }
         )
         
@@ -214,22 +213,7 @@ class Database:
         
         return all_risks
 
-    # Authentication Methods
-    def create_user(self, email, password, name):
-        """Register a new user"""
-        self._ensure_connection()
-        return self.prisma.user.create(
-            data={
-                'email': email,
-                'password': password,  # In production, use bcrypt!
-                'name': name
-            }
-        )
-
-    def get_user_by_email(self, email):
-        """Find user for login"""
-        self._ensure_connection()
-        return self.prisma.user.find_unique(where={'email': email})
+    # Authentication Methods Removed
 
     def disconnect(self):
         """Disconnect from database - call this on app shutdown"""
