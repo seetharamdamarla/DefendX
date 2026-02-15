@@ -9,6 +9,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  password      String?
+  googleId      String?  @unique
+  profilePicture String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  scans         Scan[]
+}
 
 model Scan {
   id             String   @id @default(uuid())
@@ -16,5 +27,6 @@ model Scan {
   scanTimestamp  DateTime
   results        Json
   createdAt      DateTime @default(now())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
 }
-

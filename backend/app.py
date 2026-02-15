@@ -26,11 +26,24 @@ from flask_limiter.util import get_remote_address
 from modules.scanner import AttackSurfaceScanner
 from modules.validator import URLValidator
 from database.db import Database
+from modules.auth import auth_bp, init_oauth
 
 app = Flask(__name__)
 
+# Session configuration for OAuth
+app.secret_key = os.urandom(24)  # Generate random secret key
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Initialize OAuth
+google_oauth = init_oauth(app)
+
+# Register authentication blueprint
+app.register_blueprint(auth_bp, url_prefix='/api')
+
 # Configure CORS - restrict in production
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 # Rate limiting to prevent abuse
 # Justification: Prevents automated scanning abuse and resource exhaustion
