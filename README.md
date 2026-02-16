@@ -8,7 +8,7 @@
 [![Python](https://img.shields.io/badge/Python-v3.9+-blue.svg)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-v18-61DAFB.svg)](https://reactjs.org/)
 [![Flask](https://img.shields.io/badge/Flask-v3.0-lightgrey.svg)](https://flask.palletsprojects.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v15+-336791.svg)](https://www.postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v16-336791.svg)](https://www.postgresql.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748.svg)](https://www.prisma.io/)
 
 </div>
@@ -17,31 +17,43 @@
 
 ## Overview
 
-DefendX is a comprehensive security assessment platform designed to automate the discovery of web-based vulnerabilities. By combining multi-layered reconnaissance with advanced rule-based detection and a production-ready PostgreSQL cloud backend, it provides security teams with a unified Command Center (SOC) to monitor and mitigate threats in real-time.
+DefendX is a high-performance security assessment platform built for the modern threat landscape. It transforms complex vulnerability scanning into a unified, glassmorphic **Security Operations Center (SOC)** dashboard. 
 
-### Key Features
+Featuring multi-user isolation, production-grade authentication, and real-time scanning powered by an advanced rule-based engine, DefendX provides security analysts with a professional-grade command center to monitor, detect, and mitigate web-based risks.
 
-- **Automated Scanning**: Real-time detection of OWASP Top 10 vulnerabilities including:
-    - **SQL Injection (SQLi)**: Pattern-based detection of potential injection points.
-    - **Cross-Site Scripting (XSS)**: Identification of reflected and stored XSS risks.
-    - **Sensitive Information Disclosure**: Detection of exposed API keys, PII, and debug info.
-    - **CORS Misconfiguration**: Analysis of permissive Access-Control headers.
-- **Security Operations Center (SOC)**: High-performance dashboard featuring risk scoring, threat trends, and target monitoring with SVG-driven health metrics.
-- **Robust Backend Architecture**: 
-    - **Connection Pooling**: Optimized database connection management with timeout prevention and auto-reconnection logic.
-    - **Graceful Shutdown**: Signal handling ensures clean resource release and connection closure.
-    - **Production Authentication**: Secure registration and sign-in system with **Bcrypt** password hashing.
-- **Cloud-Native Database**: Scalable **PostgreSQL** integration via **Supabase** for high-integrity data storage using **Prisma ORM**.
-- **Premium Design**: State-of-the-art glassmorphic UI with smooth animations and responsive layouts.
+---
+
+## Latest Features
+
+### Enterprise-Grade Authentication
+- **Multi-Auth Flow**: Secure registration using traditional Email/Password or one-click **Google OAuth**.
+- **Session Management**: Robust server-side session handling with secure cookie configurations.
+- **Bcrypt Hashing**: Industry-standard password protection.
+
+### Professional SOC Dashboard
+- **Security Health Score**: Real-time calculation of a target's posture using a professional vulnerability weighting algorithm.
+- **Data Isolation**: Strict multi-user architecture—users only see their own scan history and statistics.
+- **Dynamic Metrics**: Instant visibility into Total Scans, Active Targets, and Critical Risk distribution.
+- **Interactive Trends**: Visual scan activity tracking over time.
+
+### Advanced Scanning Capabilities
+- **Automated Reconnaissance**: Rule-based detection of OWASP Top 10 vulnerabilities (SQLi, XSS, etc.).
+- **Surface Monitoring**: Track multiple targets simultaneously with per-target status history.
+- **Detailed Findings**: Drill-down modal for every vulnerability with technical descriptions and severity levels.
+- **Rate Limiting**: Integrated protection against scanning abuse and resource exhaustion.
+
+### Real-Time Feedback
+- **Notification System**: Instant alerts for completed scans and high-risk detections.
+- **Premium UI**: Developed with **Framer Motion**, **Background Beams**, and **Glassmorphism** for a state-of-the-art diagnostic aesthetic.
 
 ---
 
 ## Tech Stack
 
-**Backend**: Python 3.9+, Flask, **Prisma ORM (Python)**, Bcrypt  
-**Database**: **PostgreSQL** (Managed via Supabase) with Connection Pooling  
-**Frontend**: React 18, Vite, TailwindCSS, Lucide Icons, Glassmorphism  
-**Security Engine**: Modular vulnerability detection system, URL Validation, Rate Limiting (Flask-Limiter)
+- **Backend**: Python 3.9+, Flask, **Authlib (OAuth)**, **Flask-Limiter**
+- **Database**: **PostgreSQL** (Managed via Neon Cloud)
+- **ORM**: **Prisma (Python)** for type-safe database interactions
+- **Frontend**: React 18, Vite, **TailwindCSS**, **Framer Motion**, **Lucide Icons**
 
 ---
 
@@ -50,20 +62,17 @@ DefendX is a comprehensive security assessment platform designed to automate the
 ```
 DefendX/
 ├── backend/                # Flask API & Scanner Engine
-│   ├── prisma/            # Prisma Schema & Database Configuration
-│   │   └── schema.prisma  # Database models & connection settings
-│   ├── database/          # Production-grade database wrapper
-│   │   └── db.py          # Connection lifecycle management
-│   ├── modules/           # Vulnerability detection modules
-│   │   ├── checks/        # Specific security check logic (SQLi, XSS, etc.)
-│   │   └── scanner.py     # Main scanning engine
-│   ├── .env               # Environment variables
-│   └── app.py             # Main entry point with signal handling
-├── frontend/              # React Application
+│   ├── prisma/            # Database Schema & Client
+│   ├── database/          # Shared Prisma Instance & DB Logic
+│   ├── modules/           # Vulnerability Engine & Health Scoring
+│   │   ├── auth.py        # OAuth & Email Auth Handlers
+│   │   └── scanner.py     # Attack Surface Scanner Core
+│   └── app.py             # Main Entry Point
+├── frontend/              # React SOC Dashboard
 │   ├── src/
-│   │   ├── components/    # Reusable UI & Layout components
-│   │   ├── pages/         # Landing, Auth, SOC Dashboard
-│   │   └── assets/        # Media & Global Styles
+│   │   ├── components/    # Reusable UI & Layouts
+│   │   ├── pages/         # Dashboard, Scan Input, Auth
+│   │   └── App.tsx        # Application Routing
 │   └── package.json
 └── README.md
 ```
@@ -73,80 +82,73 @@ DefendX/
 ## Installation & Setup
 
 ### Prerequisites
-
 - Python (v3.9+)
 - Node.js (v18+)
-- PostgreSQL Database (Supabase recommended)
+- Neon PostgreSQL Account
 
-### Quick Start
+### 1. Clone the project
+```bash
+git clone https://github.com/seetharamdamarla/DefendX.git
+cd DefendX
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/seetharamdamarla/DefendX.git
-   cd DefendX
-   ```
+### 2. Backend Setup
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-2. **Backend Setup**
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+### 3. Environment Configuration
+Create a `.env` file in the `backend/` directory with the following variables:
+```env
+DATABASE_URL="your-postgresql-connection-string"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GOOGLE_REDIRECT_URI="http://localhost:5000/api/auth/google/callback"
+```
 
-3. **Database Configuration**
-   - Create a `.env` file in the `backend/` directory.
-   - Add your connection string with pooling parameters:
-     ```env
-     DATABASE_URL="postgresql://user:password@host:port/database?pgbouncer=true&connection_limit=20&pool_timeout=30"
-     ```
-   - Generate the Prisma Client:
-     ```bash
-     prisma generate
-     ```
+### 4. Initialize Database
+```bash
+prisma generate
+# Optional: Use 'prisma db push' if starting with a new database
+```
 
-4. **Frontend Setup**
-   ```bash
-   cd ../frontend
-   npm install
-   npm run dev
-   ```
+### 5. Start Backend Server
+```bash
+python app.py
+```
+*The API will be available at `http://localhost:5000`*
 
-   - Frontend: [http://localhost:5173](http://localhost:5173)
-   - Backend: [http://localhost:5000](http://localhost:5000)
-
----
-
-## API Endpoints
-
-**Base URL**: `http://localhost:5000/api`
-
-### Authentication
-- `POST /auth/register` - Create a new secure account
-- `POST /auth/login` - Authenticate user and retrieve profile data
-
-### Security Operations
-- `POST /scan` - Initiate a security audit on a target URL
-- `GET /scan/<id>` - Retrieve detailed results from the PostgreSQL store
-- `GET /dashboard` - Fetch aggregate security metrics and threat trends
-- `GET /targets` - List all unique targets and their current risk status
-
-### System & Compliance
-- `GET /health` - System health status and timestamp
-- `GET /disclaimer` - Ethical use guidelines and requirements
+### 6. Frontend Setup
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+*The Dashboard will be live at `http://localhost:5173`*
 
 ---
 
-## Troubleshooting
+## API Reference
 
-- **Database Timeout Errors**: If you encounter connection pool timeouts, ensure your `DATABASE_URL` includes the `pool_timeout=30` and `connection_limit` parameters as shown in the setup instructions. The logic in `db.py` handles auto-reconnection, but correct configuration is required for high concurrency.
-- **Connection Refused**: Ensure your IP is allowed in your cloud database provider's firewall settings (e.g., Supabase dashboard).
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/api/auth/signup` | `POST` | User registration |
+| `/api/auth/login` | `POST` | Email authentication |
+| `/api/auth/google/login` | `GET` | Google OAuth redirect |
+| `/api/auth/logout` | `GET` | Clear current session |
+| `/api/scan` | `POST` | Launch vulnerability audit |
+| `/api/dashboard` | `GET` | Isolated SOC metrics |
+| `/api/targets` | `GET` | User attack surface list |
+| `/api/risks` | `GET` | All detected vulnerabilities |
 
 ---
 
-## License
+## Ethical Disclosure
 
-This project is licensed under the MIT License.
+DefendX is intended strictly for authorized security testing and educational purposes. Unauthorized scanning of targets is illegal. By using this tool, you take full responsibility for its operation and confirm you have explicit permission to test any target you scan.
 
 ---
 
