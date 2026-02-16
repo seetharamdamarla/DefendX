@@ -1,22 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import LandingPage from './pages/LandingPage'
 import ScanInputPage from './pages/ScanInputPage'
-import ScanResultsPage from './pages/ScanResultsPage'
 import DashboardPage from './pages/DashboardPage'
+import SignupPage from './pages/SignupPage'
 import type { ScanResult } from './types'
 
 function App() {
-    const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'input' | 'results'>('landing')
+    const [currentPage, setCurrentPage] = useState<'landing' | 'signup' | 'dashboard' | 'input' | 'results'>(() => {
+        const urlParams = new URLSearchParams(window.location.search)
+        if (urlParams.get('auth') === 'success') {
+            return 'input'
+        }
+        if (urlParams.get('error')) {
+            return 'signup'
+        }
+        return 'landing'
+    })
     const [scanData, setScanData] = useState<ScanResult | null>(null)
 
+    // Clean up URL after OAuth redirect
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search)
+        if (urlParams.get('auth') === 'success') {
+            // Clean up URL
+            // window.history.replaceState({}, document.title, window.location.pathname)
+        }
+    }, [])
+
     const handleGetStarted = () => {
-        // Direct access to Dashboard
-        setCurrentPage('dashboard')
+        // Go to Signup
+        setCurrentPage('signup')
     }
 
     const handleScanComplete = (data: ScanResult) => {
         setScanData(data)
-        setCurrentPage('results')
+        setCurrentPage('dashboard')
     }
 
     const handleNewScan = () => {
@@ -32,24 +50,24 @@ function App() {
                 />
             )}
 
+            {currentPage === 'signup' && (
+                <SignupPage
+                    onNavigate={(page) => setCurrentPage(page as any)}
+                />
+            )}
+
             {currentPage === 'dashboard' && (
-                <DashboardPage onNavigate={(page) => {
-                    setCurrentPage(page as any)
-                }} />
+                <DashboardPage
+                    onNavigate={(page) => setCurrentPage(page as any)}
+                    scanData={scanData}
+                    onNewScan={handleNewScan}
+                />
             )}
 
             {currentPage === 'input' && (
                 <ScanInputPage
                     onScanComplete={handleScanComplete}
-                    onBack={() => setCurrentPage('dashboard')}
-                />
-            )}
-
-            {currentPage === 'results' && (
-                <ScanResultsPage
-                    scanData={scanData}
-                    onNewScan={handleNewScan}
-                    onBack={() => setCurrentPage('dashboard')}
+                    onNavigate={(page) => setCurrentPage(page as any)}
                 />
             )}
         </>

@@ -7,7 +7,7 @@ import bcrypt
 from flask import Blueprint, request, jsonify, redirect, session
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
-from prisma import Prisma
+from database.db import prisma
 
 load_dotenv()
 
@@ -17,8 +17,7 @@ auth_bp = Blueprint('auth', __name__)
 # Initialize OAuth
 oauth = OAuth()
 
-# Initialize global Prisma client (optional, but good practice to have one available)
-db_global = Prisma()
+# The auth module now uses the shared prisma client from database.prisma_client
 
 def init_oauth(app):
     """Initialize OAuth with app"""
@@ -49,20 +48,18 @@ def signup():
         if not email or not password:
             return jsonify({'success': False, 'error': 'Email and password are required'}), 400
         
-        # Connect to database
-        db = Prisma()
-        db.connect()
+        # Use shared prisma client
+        if not prisma.is_connected():
+            prisma.connect()
+        db = prisma
         
         # Check if user already exists
         try:
             existing_user = db.user.find_unique(where={'email': email})
             if existing_user:
-                db.disconnect()
                 return jsonify({'success': False, 'error': 'Email already registered'}), 400
         except Exception as query_error:
             print(f"✗ Database query error: {str(query_error)}")
-            if db:
-                db.disconnect()
             return jsonify({'success': False, 'error': 'Database error. Please try again.'}), 500
         
         # Hash password
@@ -78,12 +75,9 @@ def signup():
                 }
             )
         except Exception as create_error:
-            print(f"✗ User creation error: {str(create_error)}")
-            if db:
-                db.disconnect()
             return jsonify({'success': False, 'error': 'Could not create user. Please try again.'}), 500
         
-        db.disconnect()
+        # Connection stays open in shared client mode
         
         # Store user session
         session['user'] = {
@@ -107,11 +101,6 @@ def signup():
         
     except Exception as e:
         print(f"✗ Signup error: {str(e)}")
-        if db:
-            try:
-                db.disconnect()
-            except:
-                pass
         return jsonify({'success': False, 'error': 'An unexpected error occurred. Please try again.'}), 500
 
 @auth_bp.route('/auth/login', methods=['POST'])
@@ -126,23 +115,21 @@ def login():
         if not email or not password:
             return jsonify({'success': False, 'error': 'Email and password are required'}), 400
         
-        # Connect to database
-        db = Prisma()
-        db.connect()
+        if not prisma.is_connected():
+            prisma.connect()
+        db = prisma
         
         # Find user
         user = db.user.find_unique(where={'email': email})
         
         if not user or not user.password:
-            db.disconnect()
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
         
         # Check password
         if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-            db.disconnect()
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
         
-        db.disconnect()
+        # Connection stays open in shared client mode
         
         # Store user session
         session['user'] = {
@@ -166,11 +153,6 @@ def login():
         
     except Exception as e:
         print(f"✗ Login error: {str(e)}")
-        if db:
-            try:
-                db.disconnect()
-            except:
-                pass
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @auth_bp.route('/auth/google/login')
@@ -199,18 +181,18 @@ def google_callback():
         google_id = user_info.get('sub')
         profile_picture = user_info.get('picture')
         
-        # Connect to database
-        db = Prisma()
-        db.connect()
+        if not prisma.is_connected():
+            prisma.connect()
+        db = prisma.user
         
         # Check if user exists
-        existing_user = db.user.find_unique(
+        existing_user = db.find_unique(
             where={'googleId': google_id}
         )
         
         if existing_user:
             # Update existing user
-            user = db.user.update(
+            user = db.update(
                 where={'id': existing_user.id},
                 data={
                     'name': name,
@@ -220,7 +202,7 @@ def google_callback():
             print(f"✓ Existing user logged in: {email}")
         else:
             # Create new user
-            user = db.user.create(
+            user = db.create(
                 data={
                     'email': email,
                     'name': name,
@@ -230,8 +212,7 @@ def google_callback():
             )
             print(f"✓ New user created: {email}")
         
-        # Disconnect from database
-        db.disconnect()
+        # Connection stays open in shared client mode
         
         # Store user session
         session['user'] = {
@@ -246,11 +227,6 @@ def google_callback():
         
     except Exception as e:
         print(f"✗ Google OAuth error: {str(e)}")
-        if db:
-            try:
-                db.disconnect()
-            except:
-                pass
         return redirect('http://localhost:5173?error=oauth_failed#signup')
 
 @auth_bp.route('/auth/user')

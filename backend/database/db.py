@@ -1,15 +1,11 @@
-"""
-Database Module - PostgreSQL + Prisma Edition
-
-Purpose: Professional data layer for DefendX
-Implementation: PostgreSQL with Prisma ORM for Type Safety and Scalability
-"""
-
 import json
 import uuid
 import asyncio
 from datetime import datetime
 from prisma import Prisma, Json
+
+# Single global instance to be shared across the application
+prisma = Prisma()
 
 class Database:
     """
@@ -18,9 +14,10 @@ class Database:
     
     def __init__(self):
         """Initialize Prisma client and establish connection"""
-        self.prisma = Prisma()
+        self.prisma = prisma
         try:
-            self.prisma.connect()
+            if not self.prisma.is_connected():
+                self.prisma.connect()
             self._connected = True
             print("✓ Database connected successfully")
         except Exception as e:
@@ -38,7 +35,7 @@ class Database:
                 print(f"✗ Database reconnection failed: {str(e)}")
                 raise
 
-    def store_scan_result(self, url: str, results: dict, timestamp: datetime) -> str:
+    def store_scan_result(self, url: str, results: dict, timestamp: datetime, user_id: str = None) -> str:
         """
         Store scan results using Prisma
         """
@@ -55,7 +52,8 @@ class Database:
                 'id': scan_id,
                 'targetUrl': url,
                 'scanTimestamp': timestamp,
-                'results': Json(results)
+                'results': Json(results),
+                'userId': user_id
             }
         )
         
@@ -77,11 +75,14 @@ class Database:
         
         return None
 
-    def get_recent_scans(self, limit: int = 10) -> list:
+    def get_recent_scans(self, limit: int = 10, user_id: str = None) -> list:
         """Get recent scan history"""
         self._ensure_connection()
         
+        where_clause = {'userId': user_id}
+        
         scans_data = self.prisma.scan.find_many(
+            where=where_clause,
             order={'createdAt': 'desc'},
             take=limit
         )
@@ -103,11 +104,12 @@ class Database:
                 
         return scans
 
-    def get_dashboard_stats(self) -> dict:
+    def get_dashboard_stats(self, user_id: str = None) -> dict:
         """Get aggregated stats for dashboard with professional health score"""
         self._ensure_connection()
         
-        all_scans = self.prisma.scan.find_many()
+        where_clause = {'userId': user_id}
+        all_scans = self.prisma.scan.find_many(where=where_clause)
         
         total_scans = len(all_scans)
         unique_targets = set()
@@ -153,11 +155,15 @@ class Database:
             'health_score': health_data  # New professional health score data
         }
 
-    def get_targets(self) -> list:
+    def get_targets(self, user_id: str = None) -> list:
         """Get unique targets and their status"""
         self._ensure_connection()
         
-        all_scans = self.prisma.scan.find_many(order={'createdAt': 'desc'})
+        where_clause = {'userId': user_id}
+        all_scans = self.prisma.scan.find_many(
+            where=where_clause,
+            order={'createdAt': 'desc'}
+        )
         
         targets = {}
         for s in all_scans:
@@ -182,11 +188,12 @@ class Database:
                 
         return list(targets.values())
 
-    def get_all_risks(self) -> list:
+    def get_all_risks(self, user_id: str = None) -> list:
         """Get flattened list of all risks"""
         self._ensure_connection()
         
-        all_scans = self.prisma.scan.find_many()
+        where_clause = {'userId': user_id}
+        all_scans = self.prisma.scan.find_many(where=where_clause)
         
         all_risks = []
         for s in all_scans:

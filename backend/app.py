@@ -17,7 +17,7 @@ import os
 import signal
 import sys
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -43,7 +43,7 @@ google_oauth = init_oauth(app)
 app.register_blueprint(auth_bp, url_prefix='/api')
 
 # Configure CORS - restrict in production
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
 # Rate limiting to prevent abuse
 # Justification: Prevents automated scanning abuse and resource exhaustion
@@ -119,10 +119,12 @@ def start_scan():
         scan_results = scanner.execute_scan()
         
         # Step 4: Store scan results
+        user_id = session.get('user', {}).get('id')
         scan_id = db.store_scan_result(
             url=target_url,
             results=scan_results,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
+            user_id=user_id
         )
         
         # Step 5: Return structured results
@@ -173,8 +175,12 @@ def get_scan_result(scan_id):
 def get_dashboard_data():
     """Retrieve aggregate data for the dashboard"""
     try:
-        stats = db.get_dashboard_stats()
-        recent_scans = db.get_recent_scans(limit=5)
+        user_id = session.get('user', {}).get('id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+            
+        stats = db.get_dashboard_stats(user_id=user_id)
+        recent_scans = db.get_recent_scans(limit=5, user_id=user_id)
         
         return jsonify({
             'success': True,
@@ -194,7 +200,10 @@ def get_dashboard_data():
 def get_targets():
     """Get all unique targets"""
     try:
-        targets = db.get_targets()
+        user_id = session.get('user', {}).get('id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        targets = db.get_targets(user_id=user_id)
         return jsonify({'success': True, 'targets': targets}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -204,7 +213,10 @@ def get_targets():
 def get_risks():
     """Get all risks"""
     try:
-        risks = db.get_all_risks()
+        user_id = session.get('user', {}).get('id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        risks = db.get_all_risks(user_id=user_id)
         return jsonify({'success': True, 'risks': risks}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -214,8 +226,11 @@ def get_risks():
 def get_all_scans():
     """Get all scans history"""
     try:
+        user_id = session.get('user', {}).get('id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
         # Reusing get_recent_scans with a high limit effectively gets all for this scale
-        scans = db.get_recent_scans(limit=100)
+        scans = db.get_recent_scans(limit=100, user_id=user_id)
         return jsonify({'success': True, 'scans': scans}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
