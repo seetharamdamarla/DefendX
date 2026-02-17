@@ -21,7 +21,8 @@ class Database:
             self._connected = True
             print("✓ Database connected successfully")
         except Exception as e:
-            print(f"✗ Database connection failed: {str(e)}")
+            # Don't crash on init, allow retry later
+            print(f" Database initial connection failed: {str(e)}")
             self._connected = False
 
     def _ensure_connection(self):

@@ -63,6 +63,16 @@ SCAN_TIMEOUT = 60  # seconds - prevents indefinite scans
 MAX_CRAWL_DEPTH = 1  # Conservative depth to avoid overload and speed up scan
 
 
+@app.route('/', methods=['GET'])
+def index():
+    """Root endpoint for visibility"""
+    return jsonify({
+        'name': 'DefendX API',
+        'status': 'Online',
+        'version': '1.0.0'
+    }), 200
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Simple health check endpoint"""
