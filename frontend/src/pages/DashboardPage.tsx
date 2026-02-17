@@ -540,8 +540,9 @@ function ScansView({ onViewScan, searchQuery = '', isSearching = false }: { onVi
                                 </td>
                                 <td className="p-6 text-zinc-500 text-xs font-mono">{new Date(scan.timestamp).toLocaleString()}</td>
                                 <td className="p-6 text-center">
-                                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider border uppercase ${scan.risk_score === 'HIGH' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                        scan.risk_score === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider border uppercase ${scan.risk_score === 'CRITICAL' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                        scan.risk_score === 'HIGH' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                            scan.risk_score === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                                         }`}>{scan.risk_score}</span>
                                 </td>
                                 <td className="p-6 text-center text-zinc-400 font-bold text-sm group-hover:text-purple-400 transition-colors">{scan.vuln_count}</td>
@@ -601,8 +602,9 @@ function RisksView({ onRiskClick, searchQuery = '', isSearching = false }: { onR
                                 onClick={() => onRiskClick(risk)}
                             >
                                 <td className="p-6 text-center">
-                                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider border uppercase ${risk.severity === 'HIGH' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                        risk.severity === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider border uppercase ${risk.severity === 'CRITICAL' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                        risk.severity === 'HIGH' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                            risk.severity === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                         }`}>{risk.severity}</span>
                                 </td>
                                 <td className="p-6">
@@ -659,7 +661,8 @@ function TargetsView({ searchQuery = '', isSearching = false }: { searchQuery?: 
                             <div className="p-3 bg-white/5 rounded-xl border border-white/5 group-hover:bg-purple-500/10 group-hover:border-purple-500/20 transition-colors">
                                 <Globe className="w-5 h-5 text-zinc-400 group-hover:text-purple-400 transition-colors" />
                             </div>
-                            <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold border uppercase tracking-wide ${target.risk_score === 'HIGH' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                            <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold border uppercase tracking-wide ${target.risk_score === 'CRITICAL' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' :
+                                target.risk_score === 'HIGH' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                                 }`}>{target.risk_score} Risk</div>
                         </div>
 
@@ -705,6 +708,7 @@ function ResultsView({ scanData, onNewScan, searchQuery = '', isSearching = fals
 
     const getSeverityColor = (severity: string) => {
         switch (severity.toUpperCase()) {
+            case 'CRITICAL': return 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'
             case 'HIGH': return 'text-red-400 bg-red-500/10 border-red-500/20'
             case 'MEDIUM': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
             case 'LOW': return 'text-blue-400 bg-blue-500/10 border-blue-500/20'
@@ -714,6 +718,7 @@ function ResultsView({ scanData, onNewScan, searchQuery = '', isSearching = fals
 
     const getRiskScoreColor = (score: string) => {
         switch (score.toUpperCase()) {
+            case 'CRITICAL': return 'from-indigo-600 to-indigo-800 shadow-indigo-500/20'
             case 'HIGH': return 'from-red-600 to-red-800 shadow-red-500/20'
             case 'MEDIUM': return 'from-yellow-400 to-orange-600 shadow-orange-500/20'
             case 'LOW': return 'from-green-500 to-emerald-700 shadow-emerald-500/20'
@@ -769,7 +774,7 @@ function ResultsView({ scanData, onNewScan, searchQuery = '', isSearching = fals
                         <div className="relative w-40 h-40 flex items-center justify-center mb-6">
                             {/* Animated Rings */}
                             <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
-                            <div className={`absolute inset-0 rounded-full border-4 border-t-current border-r-current border-b-transparent border-l-transparent animate-spin-slow opacity-30 ${summary.risk_score === 'HIGH' ? 'text-red-500' : summary.risk_score === 'MEDIUM' ? 'text-yellow-500' : 'text-green-500'}`}></div>
+                            <div className={`absolute inset-0 rounded-full border-4 border-t-current border-r-current border-b-transparent border-l-transparent animate-spin-slow opacity-30 ${summary.risk_score === 'CRITICAL' ? 'text-indigo-500' : summary.risk_score === 'HIGH' ? 'text-red-500' : summary.risk_score === 'MEDIUM' ? 'text-yellow-500' : 'text-green-500'}`}></div>
 
                             <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${getRiskScoreColor(summary.risk_score)} flex items-center justify-center shadow-2xl`}>
                                 <span className="text-4xl font-black text-white tracking-tighter">{summary.risk_score}</span>
@@ -878,6 +883,7 @@ function ResultsView({ scanData, onNewScan, searchQuery = '', isSearching = fals
                                 <div className="flex items-start gap-4">
                                     {/* Status Icon */}
                                     <div className="mt-1">
+                                        {vuln.severity === 'CRITICAL' && <AlertTriangle className="w-5 h-5 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />}
                                         {vuln.severity === 'HIGH' && <AlertTriangle className="w-5 h-5 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />}
                                         {vuln.severity === 'MEDIUM' && <AlertTriangle className="w-5 h-5 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />}
                                         {vuln.severity === 'LOW' && <Shield className="w-5 h-5 text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />}

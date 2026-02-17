@@ -28,11 +28,19 @@ export default function Sidebar({ activeTab, onTabChange, onLogout, showResults 
         >
             <div className="flex-1 flex flex-col p-4 space-y-6">
                 {/* Title / Logo Section */}
-                <div className="flex items-center gap-3 px-2">
-                    <LogoIcon size={32} />
+                <div
+                    className="flex items-center gap-3 px-2 cursor-pointer group"
+                    onClick={() => {
+                        // Hard reload navigation to landing page
+                        window.location.href = "/"
+                    }}
+                >
+                    <div className="transition-transform duration-300 group-hover:scale-110">
+                        <LogoIcon size={32} />
+                    </div>
                     {open && (
                         <div className="flex flex-col animate-fadeIn">
-                            <span className="font-bold text-white text-lg tracking-tight">DefendX</span>
+                            <span className="font-bold text-white text-lg tracking-tight transition-colors">DefendX</span>
                             <span className="text-xs text-zinc-500 font-medium tracking-wide">Security Ops</span>
                         </div>
                     )}

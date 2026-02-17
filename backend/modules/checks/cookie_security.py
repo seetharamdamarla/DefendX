@@ -54,88 +54,59 @@ class CookieSecurityCheck:
     def check(self, target_url: str, **kwargs) -> List[Dict[str, Any]]:
         """
         Check cookies for missing security flags
-        
-        Detection Process:
-        1. Send HTTP request to target
-        2. Extract Set-Cookie headers
-        3. Parse cookie attributes
-        4. Check for missing security flags
-        5. Flag each missing flag as a vulnerability
-        
-        Explicit conditions only.
         """
         vulnerabilities = []
         
         try:
-            # Step 1: Make request
             response = requests.get(target_url, timeout=10, allow_redirects=True)
             
-            # Step 2: Extract cookies from response headers
-            # Cookies can be in multiple Set-Cookie headers
-            set_cookie_headers = response.headers.get_list('Set-Cookie') if hasattr(response.headers, 'get_list') else [response.headers.get('Set-Cookie')]
+            # Step 1: Extract Set-Cookie headers
+            if 'Set-Cookie' in response.headers:
+                # Handle single or multiple headers
+                if isinstance(response.headers['Set-Cookie'], list):
+                    headers = response.headers['Set-Cookie']
+                else:
+                    # Requests merges multiple headers with comma, which breaks cookie parsing
+                    # We need to rely on the raw headers or split carefully
+                    # For simplicity, we use the `cookies` object but check raw string if possible
+                    headers = [response.headers['Set-Cookie']]
+            else:
+                headers = []
             
-            # Also check cookies from session
-            cookies = response.cookies
-            
-            if not cookies and not any(set_cookie_headers):
-                # No cookies found - nothing to check
-                return vulnerabilities
-            
-            # Step 3: Analyze each cookie
-            for cookie in cookies:
-                cookie_name = cookie.name
-                cookie_value = cookie.value
-                
-                # Check each security flag
+            # Use requests.cookies for easy iteration
+            for cookie in response.cookies:
+                # Ignore non-sensitive cookies (like language prefs, analytical ids that aren't session)
+                if not self._is_sensitive_cookie(cookie.name):
+                    continue
+                    
                 issues = []
-                
-                # Check HttpOnly flag
-                # Rule: If httponly is False, it's a vulnerability
-                if not cookie.has_nonstandard_attr('HttpOnly') and not hasattr(cookie, '_rest') or not getattr(cookie, 'has_nonstandard_attr', lambda x: False)('HttpOnly'):
-                    # The cookie does not have HttpOnly flag
-                    issues.append('HttpOnly')
-                
-                # Check Secure flag (important for HTTPS sites)
-                if not cookie.secure and target_url.startswith('https://'):
-                    issues.append('Secure')
-                
-                # Create vulnerability for this cookie if issues found
-                if issues:
-                    vulnerability = {
-                        'category': 'Insecure Cookie Configuration',
-                        'severity': 'MEDIUM',
-                        'title': f'Insecure Cookie: {cookie_name}',
-                        'description': self._generate_description(cookie_name, issues),
-                        'evidence': {
-                            'cookie_name': cookie_name,
-                            'missing_flags': issues,
-                            'url': target_url
-                        },
-                        'remediation': self._generate_remediation(issues),
-                        'references': [
-                            'https://owasp.org/www-community/controls/SecureCookieAttribute',
-                            'https://owasp.org/www-community/HttpOnly'
-                        ]
-                    }
-                    vulnerabilities.append(vulnerability)
+                # Check HttpOnly
+                # Note: requests.cookies doesn't easily expose HttpOnly attribute for received cookies
+                # We often need to parse the headers manually for this.
+                # So we rely on _analyze_set_cookie_header mostly
+                pass 
             
-            # Also check Set-Cookie headers directly for more accurate parsing
-            for set_cookie_header in set_cookie_headers:
-                if set_cookie_header:
-                    vulns = self._analyze_set_cookie_header(set_cookie_header, target_url)
-                    vulnerabilities.extend(vulns)
-        
-        except Exception as e:
-            # Silently continue if check fails
+            # CRITICAL: Analyze raw Set-Cookie headers for accurate flag detection
+            # This is better than response.cookies object which sometimes hides flags
+            raw_headers = response.raw.headers.getlist('Set-Cookie')
+            for header in raw_headers:
+                vulns = self._analyze_set_cookie_header(header, target_url)
+                vulnerabilities.extend(vulns)
+                
+        except Exception:
             pass
         
         return vulnerabilities
     
+    def _is_sensitive_cookie(self, name: str) -> bool:
+        """Check if cookie likely contains sensitive session data"""
+        name = name.lower()
+        sensitive_keywords = ['sess', 'auth', 'token', 'id', 'uid', 'jwt', 'login', 'user', 'account', 'key']
+        return any(keyword in name for keyword in sensitive_keywords)
+
     def _analyze_set_cookie_header(self, set_cookie_header: str, target_url: str) -> List[Dict[str, Any]]:
         """
         Analyze Set-Cookie header for missing flags
-        
-        More reliable parsing of cookie attributes
         """
         vulnerabilities = []
         
@@ -145,19 +116,22 @@ class CookieSecurityCheck:
             cookie.load(set_cookie_header)
             
             for key, morsel in cookie.items():
+                if not self._is_sensitive_cookie(key):
+                    continue
+                    
                 issues = []
+                lower_header = set_cookie_header.lower()
                 
                 # Check HttpOnly
-                # Explicit condition: 'httponly' not in cookie string (case insensitive)
-                if 'httponly' not in set_cookie_header.lower():
+                if 'httponly' not in lower_header:
                     issues.append('HttpOnly')
                 
-                # Check Secure
-                if 'secure' not in set_cookie_header.lower() and target_url.startswith('https://'):
+                # Check Secure (only if HTTPS)
+                if target_url.startswith('https://') and 'secure' not in lower_header:
                     issues.append('Secure')
                 
                 # Check SameSite
-                if 'samesite' not in set_cookie_header.lower():
+                if 'samesite' not in lower_header:
                     issues.append('SameSite')
                 
                 if issues:
@@ -173,13 +147,10 @@ class CookieSecurityCheck:
                             'set_cookie_header': set_cookie_header
                         },
                         'remediation': self._generate_remediation(issues),
-                        'references': [
-                            'https://owasp.org/www-community/controls/SecureCookieAttribute'
-                        ]
+                        'references': ['https://owasp.org/www-community/controls/SecureCookieAttribute']
                     }
                     vulnerabilities.append(vulnerability)
-        
-        except Exception as e:
+        except Exception:
             pass
         
         return vulnerabilities

@@ -113,7 +113,7 @@ class Database:
         
         total_scans = len(all_scans)
         unique_targets = set()
-        total_vulns = {'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
+        total_vulns = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
         scans_by_date = {}
         all_vulnerabilities = []  # Collect all vulnerabilities for health score
         
@@ -149,7 +149,7 @@ class Database:
         return {
             'total_scans': total_scans,
             'active_targets': len(unique_targets),
-            'critical_risks': total_vulns.get('HIGH', 0),
+            'critical_risks': total_vulns.get('CRITICAL', 0) + total_vulns.get('HIGH', 0),
             'severity_distribution': total_vulns,
             'trends': trends,
             'health_score': health_data  # New professional health score data
@@ -215,8 +215,8 @@ class Database:
                     'references': v.get('references', [])
                 })
                 
-        severity_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
-        all_risks.sort(key=lambda x: severity_order.get(x['severity'], 3))
+        severity_order = {'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3}
+        all_risks.sort(key=lambda x: severity_order.get(x['severity'], 4))
         
         return all_risks
 

@@ -39,8 +39,8 @@ Featuring multi-user isolation, production-grade authentication, and real-time s
 ### Advanced Scanning Capabilities
 - **Automated Reconnaissance**: Rule-based detection of OWASP Top 10 vulnerabilities (SQLi, XSS, etc.).
 - **Surface Monitoring**: Track multiple targets simultaneously with per-target status history.
-- **Detailed Findings**: Drill-down modal for every vulnerability with technical descriptions and severity levels.
-- **Rate Limiting**: Integrated protection against scanning abuse and resource exhaustion.
+- **Detailed Findings**: Drill-down modal for every vulnerability with technical descriptions and severity levels (Low, Medium, High, **Critical**).
+- **Proactive Defense**: Identifies **Critical** SQL Injection and RCE vectors before they can be exploited.
 
 ### Real-Time Feedback
 - **Notification System**: Instant alerts for completed scans and high-risk detections.
@@ -65,14 +65,19 @@ DefendX/
 │   ├── prisma/            # Database Schema & Client
 │   ├── database/          # Shared Prisma Instance & DB Logic
 │   ├── modules/           # Vulnerability Engine & Health Scoring
+│   │   ├── checks/        # Individual Vulnerability Modules (SQLi, XSS, etc.)
 │   │   ├── auth.py        # OAuth & Email Auth Handlers
 │   │   └── scanner.py     # Attack Surface Scanner Core
-│   └── app.py             # Main Entry Point
+│   ├── app.py             # Main Entry Point
+│   ├── vercel.json        # Vercel Deployment Config
+│   └── requirements.txt   # Python Dependencies
 ├── frontend/              # React SOC Dashboard
 │   ├── src/
 │   │   ├── components/    # Reusable UI & Layouts
-│   │   ├── pages/         # Dashboard, Scan Input, Auth
+│   │   ├── pages/         # Dashboard, Landing, Auth
+│   │   ├── types.ts       # TypeScript Definitions
 │   │   └── App.tsx        # Application Routing
+│   ├── vite.config.ts     # Vite Configuration
 │   └── package.json
 └── README.md
 ```
@@ -96,7 +101,7 @@ cd DefendX
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate  
 pip install -r requirements.txt
 ```
 
@@ -143,6 +148,27 @@ npm run dev
 | `/api/dashboard` | `GET` | Isolated SOC metrics |
 | `/api/targets` | `GET` | User attack surface list |
 | `/api/risks` | `GET` | All detected vulnerabilities |
+
+---
+
+## Deployment (Vercel)
+
+DefendX is optimized for deployment on Vercel as two separate projects (Frontend & Backend).
+
+### Backend Deployment
+1. Import `backend/` directory as a new project.
+2. Set Environment Variables:
+   - `DATABASE_URL` (NeonDB)
+   - `SECRET_KEY` (Random String)
+   - `GOOGLE_CLIENT_ID` / `SECRET`
+   - `FRONTEND_URL` (Your future frontend domain)
+3. Set Install Command: `pip install -r requirements.txt && prisma generate`
+
+### Frontend Deployment
+1. Import `frontend/` directory as a new project.
+2. Set Environment Variables:
+   - `VITE_API_URL` (Your deployed backend domain)
+3. Update Backend's `FRONTEND_URL` variable with the final frontend domain.
 
 ---
 

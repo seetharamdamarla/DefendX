@@ -249,6 +249,7 @@ class AttackSurfaceScanner:
         summary = {
             'total_vulnerabilities': len(vulnerabilities),
             'by_severity': {
+                'CRITICAL': 0,
                 'HIGH': 0,
                 'MEDIUM': 0,
                 'LOW': 0
@@ -258,12 +259,15 @@ class AttackSurfaceScanner:
         }
         
         for vuln in vulnerabilities:
-            severity = vuln.get('severity', 'LOW')
+            severity = vuln.get('severity', 'LOW').upper()
             category = vuln.get('category', 'Other')
             
             # Count by severity
             if severity in summary['by_severity']:
                 summary['by_severity'][severity] += 1
+            else:
+                # Fallback for unexpected severity
+                summary['by_severity']['LOW'] += 1
             
             # Count by category
             if category not in summary['by_category']:
@@ -272,7 +276,9 @@ class AttackSurfaceScanner:
         
         # Calculate overall risk (simple, rule-based)
         # This is NOT AI - it's explicit rules
-        if summary['by_severity']['HIGH'] > 0:
+        if summary['by_severity']['CRITICAL'] > 0:
+            summary['risk_score'] = 'CRITICAL'
+        elif summary['by_severity']['HIGH'] > 0:
             summary['risk_score'] = 'HIGH'
         elif summary['by_severity']['MEDIUM'] > 0:
             summary['risk_score'] = 'MEDIUM'

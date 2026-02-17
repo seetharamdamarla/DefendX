@@ -161,134 +161,60 @@ class DirectoryExposureCheck:
     def _is_valid_exposure(self, response, path: str) -> bool:
         """
         Verify that the response actually indicates exposure with strict validation
-        
-        Enhanced Rules to prevent false positives:
-        1. Must have substantial content (not empty page)
-        2. Must not be a framework's catch-all route (React, Next.js, etc.)
-        3. Must not be a generic error page returned as 200
-        4. Must contain specific indicators matching the expected path type
-        
-        This prevents false positives from SPAs and custom error handlers.
         """
         content = response.text
         content_lower = content.lower()
         content_length = len(response.content)
         
         # Rule 1: Check minimum content length
-        if content_length < 100:
+        if content_length < 50:
             return False
         
         # Rule 2: Detect Single Page Applications (React, Vue, Next.js, etc.)
-        # These frameworks might return the same index.html for any route
         spa_indicators = [
-            '<div id="root"',
-            '<div id="app"',
-            '<div id="__next"',
-            'window.__NEXT_DATA__',
-            'react-root',
-            'vue-app',
-            '_app.js',
-            '_buildManifest',
-            '__webpack',
-            'window.reactRender'
+            '<div id="root"', 'react-root', 'window.__NEXT_DATA__', 'vue-app',
+            '<!doctype html>', '<html', '<head', '<body' # Full HTML pages are often SPAs or custom 404s
         ]
         
-        # If we detect SPA framework, it's definitely a false positive
-        if any(indicator in content for indicator in spa_indicators):
-            return False
+        # If it's a full HTML page, we need very specific proof it's the target resource
+        is_html_page = any(ind in content_lower for ind in spa_indicators)
         
-        # Rule 3: Check for common "not found" patterns even with 200 status
+        # Rule 3: Check for common "not found" patterns
         false_positive_patterns = [
-            'not found',
-            '404',
-            'does not exist',
-            'page not found',
-            'cannot find',
-            'no such file',
-            'the requested url',
-            'file not found'
+            'not found', '404', 'does not exist', 'page not found',
+            'cannot find', 'no such file', 'whoops', 'error'
         ]
         
-        for pattern in false_positive_patterns:
-            if pattern in content_lower:
-                return False
-        
+        if any(pattern in content_lower for pattern in false_positive_patterns):
+            return False
+            
         # Rule 4: Path-specific deep validation
-        # Only flag if we have STRONG evidence the path actually exists
-        
         if path == '/.env':
-            # .env files must contain actual environment variables
-            has_env_pattern = '=' in content and '\n' in content
-            has_env_keywords = any(key in content.upper() for key in [
-                'API_KEY', 'SECRET', 'PASSWORD', 'DB_', 'DATABASE',
-                'TOKEN', 'AWS_', 'STRIPE_', 'GOOGLE_'
-            ])
-            # Must have both pattern AND keywords to be real
-            return has_env_pattern and has_env_keywords
+            # Must look like an env file (key=value)
+            return ('=' in content and '\n' in content and 
+                   any(k in content for k in ['DB_', 'API_', 'SECRET', 'PASSWORD']))
         
         if path == '/.git':
-            # Git directory must have git-specific structure
-            git_indicators = ['ref:', 'refs/', 'HEAD', 'objects/', 'config']
-            return any(indicator in content for indicator in git_indicators)
-        
-        if path in ['/admin', '/admin.php', '/administrator']:
-            # Admin panels have specific characteristics
-            admin_indicators = [
-                'admin login',
-                'administrator login',
-                'admin panel',
-                'dashboard login',
-                '<input type="password"',
-                'phpmyadmin',
-                'wp-admin',
-                'admin area',
-                'login to admin'
-            ]
+            return 'ref: refs/' in content or 'gitdir:' in content
             
-            # Must have at least 2 admin indicators to be real
-            indicator_count = sum(1 for ind in admin_indicators if ind in content_lower)
+        if path in ['/admin', '/administrator']:
+            # Must have login form
+            return 'password' in content_lower and 'login' in content_lower
             
-            # Also check for PHP-specific patterns if it's a .php file
-            if path.endswith('.php'):
-                php_indicators = ['<?php', '<?=', 'phpmyadmin']
-                has_php = any(ind in content for ind in php_indicators)
-                return indicator_count >= 2 or has_php
-            
-            return indicator_count >= 2
-        
         if path == '/phpinfo.php':
-            # Must actually be PHPInfo output
-            phpinfo_indicators = ['phpinfo()', 'php version', 'php api', 'configuration']
-            return sum(1 for ind in phpinfo_indicators if ind in content_lower) >= 2
-        
-        if path in ['/backup', '/backups']:
-            # Directory listings or actual backup file indicators
-            backup_indicators = [
-                'index of',
-                'directory listing',
-                'parent directory',
-                '.zip',
-                '.tar',
-                '.sql',
-                'backup-'
-            ]
-            return any(indicator in content_lower for indicator in backup_indicators)
-        
-        # Rule 5: Generic directory listing check
-        directory_indicators = [
-            'index of /',
-            'directory listing for',
-            'parent directory',
-            '[dir]',
-            '<a href="../">'
-        ]
-        
-        if any(indicator in content_lower for indicator in directory_indicators):
-            return True
-        
-        # Rule 6: If none of the above strict checks pass, it's likely a false positive
-        # Old logic would flag anything > 500 bytes, but that's too loose
-        return False
+            return 'php version' in content_lower or 'phpinfo()' in content_lower
+            
+        if 'backup' in path:
+            # Binary files or directory listing
+            if 'index of' in content_lower: return True
+            if content_length > 1000 and not is_html_page: return True # Likely database dump
+            
+        # Default: If it's a full HTML page and we didn't match specific rules above, assumes it's a soft 404
+        if is_html_page:
+            return False
+            
+        # If it's not HTML (e.g. plain text config), it might be valid
+        return True
 
     
     def _generate_description(self, path: str, path_info: Dict, url: str) -> str:

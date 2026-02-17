@@ -31,7 +31,7 @@ from modules.auth import auth_bp, init_oauth
 app = Flask(__name__)
 
 # Session configuration for OAuth
-app.secret_key = os.urandom(24)  # Generate random secret key
+app.secret_key = os.getenv('SECRET_KEY', 'dev_secret_key_change_in_production_12345')
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -43,7 +43,8 @@ google_oauth = init_oauth(app)
 app.register_blueprint(auth_bp, url_prefix='/api')
 
 # Configure CORS - restrict in production
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+CORS(app, resources={r"/api/*": {"origins": FRONTEND_URL}}, supports_credentials=True)
 
 # Rate limiting to prevent abuse
 # Justification: Prevents automated scanning abuse and resource exhaustion

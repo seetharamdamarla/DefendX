@@ -25,10 +25,10 @@ class XSSReflectionCheck:
     Check for reflected XSS vulnerabilities
     
     Approach:
-    1. Inject harmless test strings into URL parameters and forms
+    1. Inject harmless test strings containing special characters into URL parameters and forms
     2. Check if the string is reflected in the response
-    3. Check if the reflection is properly escaped
-    4. Report only if unescaped reflection is found
+    3. Check if the special characters are properly escaped
+    4. Report only if unescaped reflection of special characters is found
     
     This is CONSERVATIVE and ETHICAL:
     - No harmful payloads
@@ -37,115 +37,110 @@ class XSSReflectionCheck:
     """
     
     def __init__(self):
-        # Test payloads: These are HARMLESS identifiers
+        # Test payloads: These must contain special characters to test escaping
         # They are unique strings that help us track reflection
         # They do NOT execute code or cause harm
         
-        # Justification for these specific payloads:
-        # - Simple and identifiable
-        # - Not executable
-        # - Easy to detect in responses
         self.test_payloads = [
-            'DEFENDX_XSS_TEST_2026',  # Simple marker
-            '<DEFENDX_TEST_TAG>',     # HTML tag test (non-executable)
+            '<XSS_TEST>',             # Basic tag injection
+            '"><XSS_TEST>',           # Break out of attribute
+            '\'><XSS_TEST>',          # Break out of attribute (single quote)
+            ';XSS_TEST//',            # JavaScript context
         ]
     
     def check(self, target_url: str, discovered_urls: List[str] = None, 
               discovered_forms: List[Dict] = None, **kwargs) -> List[Dict[str, Any]]:
         """
         Check for XSS reflection vulnerabilities
-        
-        Process:
-        1. Test URL parameters
-        2. Test form inputs
-        3. Analyze responses for unescaped reflections
-        
-        Only flag when EXPLICIT CONDITIONS are met:
-        - Test payload is present in response
-        - Payload is NOT properly escaped
         """
         vulnerabilities = []
         
         # Test URL parameters
         if discovered_urls:
-            for url in discovered_urls[:2]:  # Limit to prevent excessive requests
+            # Deduplicate URLs based on query params to avoid redundant checks
+            tested_params = set()
+            for url in discovered_urls:
+                parsed = urlparse(url)
+                if not parsed.query:
+                    continue
+                
+                params = parse_qs(parsed.query)
+                # Create a signature for this URL's parameters
+                param_sig = f"{parsed.netloc}{parsed.path}?{sorted(params.keys())}"
+                
+                if param_sig in tested_params:
+                    continue
+                tested_params.add(param_sig)
+                
                 vulns = self._test_url_parameters(url)
                 vulnerabilities.extend(vulns)
+                
+                if len(vulnerabilities) > 10: # Safety limit
+                    break
         
         # Test forms
         if discovered_forms:
-            for form in discovered_forms[:2]:  # Limit testing
+            for form in discovered_forms[:5]:  # Limit to first 5 forms
                 vulns = self._test_form_inputs(target_url, form)
                 vulnerabilities.extend(vulns)
         
         return vulnerabilities
     
     def _test_url_parameters(self, url: str) -> List[Dict[str, Any]]:
-        """
-        Test URL parameters for XSS reflection
-        
-        Logic:
-        1. Parse URL to find parameters
-        2. Inject test payload into each parameter
-        3. Check if payload is reflected unescaped
-        """
         vulnerabilities = []
         
         try:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
             
-            # If no parameters, nothing to test
             if not params:
                 return vulnerabilities
             
-            # Test each parameter
             for param_name in params.keys():
                 for payload in self.test_payloads:
-                    # Create test URL with payload
                     test_params = params.copy()
                     test_params[param_name] = [payload]
                     
                     test_query = urlencode(test_params, doseq=True)
                     test_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{test_query}"
                     
-                    # Send request
-                    response = requests.get(test_url, timeout=10)
-                    
-                    # Check for unescaped reflection
-                    # This is the KEY DETECTION LOGIC
-                    if self._is_reflected_unescaped(response.text, payload):
-                        vulnerability = {
-                            'category': 'Reflected XSS',
-                            'severity': 'HIGH',  # XSS is always high severity
-                            'title': f'Reflected XSS in URL Parameter: {param_name}',
-                            'description': self._generate_xss_description(param_name, payload, 'URL parameter'),
-                            'evidence': {
-                                'url': test_url,
-                                'parameter': param_name,
-                                'payload': payload,
-                                'reflection_found': True
-                            },
-                            'remediation': self._generate_xss_remediation(),
-                            'references': [
-                                'https://owasp.org/www-community/attacks/xss/',
-                                'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html'
-                            ]
-                        }
-                        vulnerabilities.append(vulnerability)
-                        break  # One finding per parameter is enough
+                    try:
+                        response = requests.get(test_url, timeout=10)
+                        
+                        # Only check for XSS in HTML responses
+                        content_type = response.headers.get('Content-Type', '').lower()
+                        if 'text/html' not in content_type:
+                            continue
+                        
+                        if self._is_reflected_unescaped(response.text, payload):
+                            vulnerability = {
+                                'category': 'Reflected XSS',
+                                'severity': 'HIGH',
+                                'title': f'Reflected XSS in URL Parameter: {param_name}',
+                                'description': self._generate_xss_description(param_name, payload, 'URL parameter', test_url),
+                                'evidence': {
+                                    'url': test_url,
+                                    'parameter': param_name,
+                                    'payload': payload,
+                                    'reflection_found': True
+                                },
+                                'remediation': self._generate_xss_remediation(),
+                                'references': [
+                                    'https://owasp.org/www-community/attacks/xss/',
+                                    'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html'
+                                ]
+                            }
+                            vulnerabilities.append(vulnerability)
+                            break
+                    except requests.RequestException:
+                        continue
         
-        except Exception as e:
+        except Exception:
             pass
         
         return vulnerabilities
     
     def _test_form_inputs(self, base_url: str, form: Dict) -> List[Dict[str, Any]]:
-        """
-        Test form inputs for XSS reflection
-        
-        Logic similar to URL parameter testing
-        """
         vulnerabilities = []
         
         try:
@@ -156,47 +151,49 @@ class XSSReflectionCheck:
             if not inputs:
                 return vulnerabilities
             
-            # Build form action URL
             form_url = urljoin(base_url, action) if action else base_url
             
-            # Test each input field
             for input_field in inputs:
                 input_name = input_field.get('name', '')
                 if not input_name:
                     continue
                 
                 for payload in self.test_payloads:
-                    # Build form data
                     form_data = {input_name: payload}
                     
-                    # Submit form
-                    if method.upper() == 'POST':
-                        response = requests.post(form_url, data=form_data, timeout=10)
-                    else:
-                        response = requests.get(form_url, params=form_data, timeout=10)
-                    
-                    # Check reflection
-                    if self._is_reflected_unescaped(response.text, payload):
-                        vulnerability = {
-                            'category': 'Reflected XSS',
-                            'severity': 'HIGH',
-                            'title': f'Reflected XSS in Form Input: {input_name}',
-                            'description': self._generate_xss_description(input_name, payload, 'form input'),
-                            'evidence': {
-                                'url': form_url,
-                                'form_field': input_name,
-                                'payload': payload,
-                                'method': method
-                            },
-                            'remediation': self._generate_xss_remediation(),
-                            'references': [
-                                'https://owasp.org/www-community/attacks/xss/'
-                            ]
-                        }
-                        vulnerabilities.append(vulnerability)
-                        break
+                    try:
+                        if method.upper() == 'POST':
+                            response = requests.post(form_url, data=form_data, timeout=10)
+                        else:
+                            response = requests.get(form_url, params=form_data, timeout=10)
+                        
+                        content_type = response.headers.get('Content-Type', '').lower()
+                        if 'text/html' not in content_type:
+                            continue
+                        
+                        if self._is_reflected_unescaped(response.text, payload):
+                            vulnerability = {
+                                'category': 'Reflected XSS',
+                                'severity': 'HIGH',
+                                'title': f'Reflected XSS in Form Input: {input_name}',
+                                'description': self._generate_xss_description(input_name, payload, 'form input', form_url),
+                                'evidence': {
+                                    'url': form_url,
+                                    'form_field': input_name,
+                                    'payload': payload,
+                                    'method': method
+                                },
+                                'remediation': self._generate_xss_remediation(),
+                                'references': [
+                                    'https://owasp.org/www-community/attacks/xss/'
+                                ]
+                            }
+                            vulnerabilities.append(vulnerability)
+                            break
+                    except requests.RequestException:
+                        continue
         
-        except Exception as e:
+        except Exception:
             pass
         
         return vulnerabilities
@@ -204,36 +201,18 @@ class XSSReflectionCheck:
     def _is_reflected_unescaped(self, response_html: str, payload: str) -> bool:
         """
         Check if payload is reflected WITHOUT proper escaping
-        
-        This is the CORE DETECTION LOGIC:
-        
-        Rule 1: Payload must be present in response
-        Rule 2: Payload must NOT be HTML-escaped
-        
-        Explicit conditions:
-        - IF payload appears exactly as injected → Vulnerable
-        - IF payload is HTML-escaped → Not vulnerable
-        - IF payload is not present → Not vulnerable
-        
-        This is manual logic, not AI classification.
         """
-        # Check if payload exists in response
         if payload not in response_html:
-            return False  # Not reflected at all
-        
-        # Check if payload is HTML-escaped
-        # If HTML contains <, >, it should be escaped as &lt; &gt;
-        escaped_payload = payload.replace('<', '&lt;').replace('>', '&gt;')
-        
-        if escaped_payload in response_html and payload not in response_html:
-            return False  # Properly escaped - safe
-        
-        # If we reach here: payload is present AND not escaped
-        return True  # VULNERABLE
+            return False
+            
+        # If the exact payload (with special chars) is present, it's likely unescaped
+        # Verification: Check if it's inside a script tag or attribute where it might still be dangerous
+        # For this high-level check, exact presence of special chars is a strong indicator
+        return True
     
-    def _generate_xss_description(self, parameter: str, payload: str, location: str) -> str:
+    def _generate_xss_description(self, parameter: str, payload: str, location: str, url: str = None) -> str:
         """Generate human-readable XSS description"""
-        return f"""
+        description = f"""
 A reflected Cross-Site Scripting (XSS) vulnerability was detected in the {location} '{parameter}'.
 
 What this means:
@@ -246,6 +225,9 @@ How we detected this:
 3. We verified that the string was NOT properly HTML-escaped
 4. This indicates that malicious JavaScript could also be injected
 
+Evidence:
+URL: {url if url else 'N/A'}
+
 Why this is dangerous:
 - Attackers can steal session cookies
 - Attackers can perform actions on behalf of users
@@ -254,6 +236,7 @@ Why this is dangerous:
 
 Note: We only tested with safe, non-executable payloads for ethical reasons.
         """.strip()
+        return description
     
     def _generate_xss_remediation(self) -> str:
         """Generate XSS remediation guidance"""

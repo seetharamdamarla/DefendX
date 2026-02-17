@@ -37,7 +37,7 @@ export interface FormInput {
 
 export interface Vulnerability {
     category: string
-    severity: 'HIGH' | 'MEDIUM' | 'LOW'
+    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
     title: string
     description: string
     evidence: {
@@ -51,12 +51,13 @@ export interface Vulnerability {
 export interface ScanSummary {
     total_vulnerabilities: number
     by_severity: {
+        CRITICAL: number
         HIGH: number
         MEDIUM: number
         LOW: number
     }
     by_category: Record<string, number>
-    risk_score: 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAN' | 'UNKNOWN'
+    risk_score: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAN' | 'UNKNOWN'
 }
 
 export interface ScanMetadata {

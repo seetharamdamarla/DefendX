@@ -20,140 +20,152 @@ class SecurityHeadersCheck:
     """
     Check for missing security headers
     
-    This check is intentionally simple and explicit:
-    - Send HTTP request
-    - Inspect response headers
-    - Flag missing critical headers
-    
-    NO AI or ML involved - just header inspection.
+    Professional methodology:
+    - Inspects HTTP response headers
+    - Identifies missing critical security controls
+    - Provides actionable remediation for specific servers
     """
     
     def __init__(self):
-        # Define critical security headers (human-curated list)
-        # Each header serves a specific security purpose
+        # Define critical security headers
         self.critical_headers = {
             'Content-Security-Policy': {
-                'purpose': 'Prevents XSS and injection attacks',
-                'fix': 'Add "Content-Security-Policy" header with appropriate directives',
-                'example': "Content-Security-Policy: default-src 'self'; script-src 'self'"
+                'purpose': 'Prevents Cross-Site Scripting (XSS), injection attacks, and data theft.',
+                'risk': 'High risk of XSS and content injection attacks.',
+                'example': "default-src 'self';"
             },
             'X-Frame-Options': {
-                'purpose': 'Prevents clickjacking attacks',
-                'fix': 'Add "X-Frame-Options: DENY" or "X-Frame-Options: SAMEORIGIN"',
-                'example': 'X-Frame-Options: SAMEORIGIN'
+                'purpose': 'Prevents Clickjacking attacks by controlling iframe embedding.',
+                'risk': 'Attackers can overlay invisible frames to trick users into clicking buttons.',
+                'example': 'DENY'
             },
             'Strict-Transport-Security': {
-                'purpose': 'Enforces HTTPS connections',
-                'fix': 'Add "Strict-Transport-Security" header (HTTPS only)',
-                'example': 'Strict-Transport-Security: max-age=31536000; includeSubDomains'
+                'purpose': 'Enforces secure HTTPS connections and prevents downgrade attacks.',
+                'risk': 'Man-in-the-Middle (MitM) attacks can strip SSL/TLS protection.',
+                'example': 'max-age=31536000; includeSubDomains'
             },
             'X-Content-Type-Options': {
-                'purpose': 'Prevents MIME-type sniffing',
-                'fix': 'Add "X-Content-Type-Options: nosniff"',
-                'example': 'X-Content-Type-Options: nosniff'
+                'purpose': 'Prevents MIME-type sniffing (interpreting files as different types).',
+                'risk': 'Browsers may execute non-executable files as scripts (e.g., images as JS).',
+                'example': 'nosniff'
             },
             'Referrer-Policy': {
-                'purpose': 'Controls referrer information leakage',
-                'fix': 'Add "Referrer-Policy" header with appropriate policy',
-                'example': 'Referrer-Policy: strict-origin-when-cross-origin'
+                'purpose': 'Controls how much referrer information is leaked to other sites.',
+                'risk': 'Sensitive data in URLs (tokens, IDs) may be leaked to third-party sites.',
+                'example': 'strict-origin-when-cross-origin'
+            },
+            'Permissions-Policy': {
+                'purpose': 'Controls which browser features (camera, mic, geo) can be used.',
+                'risk': 'Unrestricted access to sensitive browser features.',
+                'example': 'geolocation=(), camera=()'
             }
         }
     
     def check(self, target_url: str, **kwargs) -> List[Dict[str, Any]]:
         """
         Check target for missing security headers
-        
-        Detection Logic:
-        1. Send HTTP GET request to target
-        2. Inspect response headers
-        3. For each critical header:
-           - IF header is missing → Flag vulnerability
-           - IF header is present → No issue
-        
-        This is manual verification, not automated classification.
         """
         vulnerabilities = []
         
         try:
             # Step 1: Make HTTP request
             response = requests.get(target_url, timeout=10, allow_redirects=True)
-            headers = response.headers
+            headers = {k.lower(): v for k, v in response.headers.items()}
             
             # Step 2: Check each critical header
             for header_name, header_info in self.critical_headers.items():
                 
-                # Explicit condition: Is header missing?
-                if header_name not in headers:
-                    # This is the ONLY condition that triggers a finding
-                    # No AI, no probabilistic detection - just presence/absence
-                    
+                # Special case for HSTS: Only relevant for HTTPS
+                if header_name == 'Strict-Transport-Security' and not target_url.startswith('https://'):
+                    continue
+                
+                # Check if header is missing
+                if header_name.lower() not in headers:
                     vulnerability = {
                         'category': 'Missing Security Header',
-                        'severity': 'MEDIUM',  # Fixed severity (human-defined)
-                        'title': f'Missing {header_name} Header',
-                        'description': self._generate_description(header_name, header_info),
+                        'severity': 'LOW' if header_name == 'Referrer-Policy' else 'MEDIUM',
+                        'title': f'Missing Security Header: {header_name}',
+                        'description': self._generate_description(header_name, header_info, target_url),
                         'evidence': {
                             'url': target_url,
-                            'missing_header': header_name
+                            'missing_header': header_name,
+                            'status_code': response.status_code,
+                            'present_headers_count': len(headers)
                         },
                         'remediation': self._generate_remediation(header_name, header_info),
                         'references': [
                             'https://owasp.org/www-project-secure-headers/',
-                            'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers'
+                            'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/' + header_name
                         ]
                     }
-                    
                     vulnerabilities.append(vulnerability)
         
-        except Exception as e:
-            # If check fails, log but don't crash
+        except Exception:
             pass
         
         return vulnerabilities
     
-    def _generate_description(self, header_name: str, header_info: Dict) -> str:
-        """
-        Generate human-readable vulnerability description
-        
-        This reads like a manual VAPT report, not AI-generated text.
-        """
+    def _generate_description(self, header_name: str, header_info: Dict, url: str) -> str:
+        """Generate professional description"""
         return f"""
-The target application is missing the {header_name} HTTP security header.
+The {header_name} security header is missing from the server response.
 
-What this means:
+What this is:
 {header_info['purpose']}
 
-Risk:
-Without this header, the application is more vulnerable to attacks that this 
-header is designed to prevent. While this alone may not be exploitable, it 
-represents a security hardening gap that should be addressed.
+Security Risk:
+{header_info['risk']}
 
 How we detected this:
-We sent an HTTP request to {header_name} and inspected the response headers. 
-The {header_name} header was not present in the response.
+1. We sent a request to: {url}
+2. We inspected the HTTP response headers
+3. The '{header_name}' header was not found
+
+Why this is dangerous:
+Security headers are a fundamental defense layer. Missing them allows browsers to engage in unsafe behaviors (like sniffing content types or allowing framing) that attackers can exploit.
+
+Detection Method:
+Standard HTTP header analysis.
         """.strip()
     
     def _generate_remediation(self, header_name: str, header_info: Dict) -> str:
-        """
-        Generate clear remediation guidance
-        
-        This is written like a security consultant would explain it.
-        """
+        """Generate remediation guidance"""
         return f"""
 Remediation Steps:
-1. Configure your web server to include the {header_name} header
-2. {header_info['fix']}
 
-Example Configuration:
-{header_info['example']}
+1. CONFIGURE WEB SERVER
+   Add the missing header to your web server configuration.
 
-Server-Specific Guidance:
-- Apache: Use Headers directive in .htaccess or httpd.conf
-- Nginx: Use add_header directive in nginx.conf
-- Express.js: Use helmet middleware
-- Flask: Use Flask-Talisman
+2. EXPECTED VALUE
+   Header: {header_name}
+   Value: {header_info['example']}
 
-Verification:
-After implementing, verify the header is present using browser DevTools 
-or command: curl -I [your-url]
+3. SERVER-SPECIFIC EXAMPLES
+
+   Nginx (nginx.conf):
+   ```nginx
+   add_header {header_name} "{header_info['example']}" always;
+   ```
+
+   Apache (.htaccess):
+   ```apache
+   Header set {header_name} "{header_info['example']}"
+   ```
+
+   Express.js (Node.js):
+   ```javascript
+   app.use((req, res, next) => {{
+     res.setHeader('{header_name}', "{header_info['example']}");
+     next();
+   }});
+   // OR use Helmet: app.use(helmet());
+   ```
+
+   Python (Flask):
+   ```python
+   @app.after_request
+   def add_security_headers(response):
+       response.headers['{header_name}'] = "{header_info['example']}"
+       return response
+   ```
         """.strip()

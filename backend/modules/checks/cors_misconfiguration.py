@@ -50,8 +50,18 @@ class CORSMisconfigurationCheck:
         vulnerabilities = []
         
         try:
+            # Generate dynamic test origins based on target
+            from urllib.parse import urlparse
+            domain = urlparse(target_url).netloc
+            
+            dynamic_origins = self.test_origins + [
+                f'https://{domain}.evil.com',   # Subdomain bypass attempt
+                f'https://evil{domain}',        # Pre-domain bypass attempt
+                f'https://{domain}.attacker.com'
+            ]
+            
             # Test 1: Check for reflected origin vulnerability
-            for test_origin in self.test_origins:
+            for test_origin in dynamic_origins:
                 vuln = self._test_reflected_origin(target_url, test_origin)
                 if vuln:
                     vulnerabilities.append(vuln)

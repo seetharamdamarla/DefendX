@@ -26,7 +26,7 @@ const timelineData = [
         id: 2,
         title: "Deep Analysis",
         date: "Phase 2",
-        content: "AI-powered vulnerability scanner analyzes your application for OWASP Top 10 threats.",
+        content: "Professional vulnerability scanner analyzes your application for OWASP Top 10 threats.",
         category: "Scanning",
         icon: Search,
         relatedIds: [1, 3],
@@ -70,11 +70,11 @@ const timelineData = [
 
 const journeyData = [
     {
-        title: "AI-Powered Detection",
+        title: "Professional-Grade Detection",
         content: (
             <div>
                 <p className="text-white text-xs md:text-sm font-normal mb-8">
-                    <span className="font-bold text-white">Machine Learning at Scale</span> - DefendX leverages advanced AI algorithms to identify vulnerabilities with unprecedented accuracy. Our engine learns from millions of attack patterns to detect both known and zero-day exploits.
+                    <span className="font-bold text-white">Ethical Scanning Engine</span> - DefendX mimics the workflows of professional penetration testers. Our engine uses industry-standard payloads and logic to identify vulnerabilities with zero false positives.
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/5 rounded-lg p-4 border border-white/10">
@@ -84,7 +84,7 @@ const journeyData = [
                     </div>
                     <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                         <Code className="w-8 h-8 text-white mb-2" />
-                        <h4 className="text-white font-bold mb-1">Pattern Recognition</h4>
+                        <h4 className="text-white font-bold mb-1">Precise Payloads</h4>
                         <p className="text-gray-400 text-xs">Detects complex attack vectors automatically</p>
                     </div>
                 </div>
@@ -217,7 +217,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col items-center justify-center text-center">
                     <div className="space-y-10">
                         <h1 className="text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight">
-                            Automated Vulnerability <br />
+                            Advanced Vulnerability <br />
                             <span className="text-gray-400">Detection Engine</span>
                         </h1>
                         <p className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto">

@@ -75,6 +75,10 @@ class InformationDisclosureCheck:
             # Check 3: Verbose error checking (try to trigger error)
             error_vulns = self._check_error_disclosure(target_url)
             vulnerabilities.extend(error_vulns)
+            
+            # Check 4: Sensitive file exposure (New)
+            file_vulns = self._check_exposed_files(target_url)
+            vulnerabilities.extend(file_vulns)
         
         except Exception:
             pass
@@ -339,6 +343,63 @@ if (process.env.NODE_ENV === 'production') {
             pass
         
         return vulnerabilities
+    
+    def _check_exposed_files(self, url: str) -> List[Dict]:
+        """
+        Check for commonly exposed sensitive files (.env, .git)
+        
+        Professional technique:
+        Fuzz for standard configuration files that should not be public
+        """
+        vulnerabilities = []
+        
+        # Files to check and what to look for in response to confirm it's valid
+        targets = [
+            ('.env', 'DB_PASSWORD='),
+            ('.git/HEAD', 'ref: refs/heads/'),
+        ]
+        
+        from urllib.parse import urljoin
+        
+        try:
+            for filename, indicator in targets:
+                target_file_url = urljoin(url, filename)
+                response = requests.get(target_file_url, timeout=5)
+                
+                if response.status_code == 200 and indicator in response.text:
+                    vulnerabilities.append({
+                        'category': 'Sensitive Data Exposure',
+                        'severity': 'CRITICAL',
+                        'title': f'Exposed Configuration File: {filename}',
+                        'description': self._generate_file_exposure_description(filename, target_file_url),
+                        'evidence': {
+                            'url': target_file_url,
+                            'status_code': 200,
+                            'content_snippet': response.text[:50]
+                        },
+                        'remediation': 'Configure web server (Nginx/Apache) to deny access to dotfiles (.*).',
+                        'references': ['https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/03-Test_File_Extensions_Handling_for_Sensitive_Information']
+                    })
+        except Exception:
+            pass
+            
+        return vulnerabilities
+
+    def _generate_file_exposure_description(self, filename: str, url: str) -> str:
+        return f"""
+CRITICAL: A system configuration file ({filename}) is publicly accessible.
+
+What this means:
+Files like .env or .git repositories contain secrets, passwords, and source code history.
+
+Risk:
+Attackers can download your entire database credentials, API keys, and source code logic.
+
+Detected At:
+{url}
+
+This is a critical misconfiguration.
+        """.strip()
     
     def _generate_header_remediation(self, header: str) -> str:
         return f"""
