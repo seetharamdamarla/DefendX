@@ -248,11 +248,11 @@ This was found through manual path enumeration, a standard penetration testing t
     
     def _generate_remediation(self, path: str, path_info: Dict) -> str:
         """Generate remediation guidance"""
-        return f"""
+        return r"""
 Remediation Steps:
 
 1. IMMEDIATE ACTION
-   - Restrict access to {path} immediately
+   - Restrict access to {} immediately
    - Verify what information is exposed
    - Check logs for unauthorized access
 
@@ -288,7 +288,7 @@ location ~ /\. {{
 
 6. VERIFICATION
    After implementing fixes:
-   - Test access to {path} from different IPs
+   - Test access to {} from different IPs
    - Verify it returns 403 (Forbidden) or 404 (Not Found)
    - Use online scanners to verify externally
-        """.strip()
+        """.strip().format(path, path)
