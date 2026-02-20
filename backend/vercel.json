@@ -1,4 +1,5 @@
 {
+    "buildCommand": "pip install -r requirements.txt && python -m prisma generate",
     "rewrites": [
         {
             "source": "/(.*)",
