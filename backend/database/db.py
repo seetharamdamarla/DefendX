@@ -13,17 +13,13 @@ class Database:
     """
     
     def __init__(self):
-        """Initialize Prisma client and establish connection"""
+        """Initialize Prisma client - connection is established lazily on first use"""
         self.prisma = prisma
-        try:
-            if not self.prisma.is_connected():
-                self.prisma.connect()
-            self._connected = True
-            print("✓ Database connected successfully")
-        except Exception as e:
-            # Don't crash on init, allow retry later
-            print(f" Database initial connection failed: {str(e)}")
-            self._connected = False
+        self._connected = False
+        # Don't connect eagerly — the Prisma query engine binary may not be
+        # available yet (e.g., on Vercel cold start where we fetch it async).
+        # Actual connection happens on first query via _ensure_connection().
+        print("✓ Database initialized (will connect on first use)")
 
     def _ensure_connection(self):
         """Internal helper to ensure db is connected"""
