@@ -27,7 +27,8 @@ export default function SignupPage({ onNavigate }: SignupPageProps) {
 
     const handleGoogleSignup = () => {
         setIsLoading(true);
-        window.location.href = 'http://localhost:5000/api/auth/google/login';
+        const base = import.meta.env.VITE_API_URL.replace(/\/$/, "");
+        window.location.href = `${base}/api/auth/google/login`;
     };
 
     const handleSignup = async (e: React.FormEvent) => {
