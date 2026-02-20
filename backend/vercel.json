@@ -1,5 +1,5 @@
 {
-    "buildCommand": "pip install -r requirements.txt && python -m prisma generate",
+    "buildCommand": "pip install -r requirements.txt --break-system-packages && python -m prisma generate",
     "rewrites": [
         {
             "source": "/(.*)",
