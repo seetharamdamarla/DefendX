@@ -1,17 +1,9 @@
 {
-    "builds": [
-        {
-            "src": "app.py",
-            "use": "@vercel/python",
-            "config": {
-                "buildCommand": "pip install -r requirements.txt --break-system-packages && python -m prisma generate"
-            }
-        }
-    ],
+    "buildCommand": "python -m prisma generate",
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/app.py"
+            "destination": "/api/index"
         }
     ]
 }
