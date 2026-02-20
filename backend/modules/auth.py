@@ -185,7 +185,7 @@ def google_callback():
             prisma.connect()
         db = prisma.user
         
-        # Check if user exists
+        # Check if user exists by google ID
         existing_user = db.find_unique(
             where={'googleId': google_id}
         )
@@ -199,18 +199,35 @@ def google_callback():
                     'profilePicture': profile_picture,
                 }
             )
-            print(f"✓ Existing user logged in: {email}")
+            print(f"✓ Existing user logged in via Google: {email}")
         else:
-            # Create new user
-            user = db.create(
-                data={
-                    'email': email,
-                    'name': name,
-                    'googleId': google_id,
-                    'profilePicture': profile_picture,
-                }
+            # Check if user exists by email
+            existing_email_user = db.find_unique(
+                where={'email': email}
             )
-            print(f"✓ New user created: {email}")
+            
+            if existing_email_user:
+                # Link Google account to existing email account
+                user = db.update(
+                    where={'id': existing_email_user.id},
+                    data={
+                        'googleId': google_id,
+                        'name': name,
+                        'profilePicture': profile_picture,
+                    }
+                )
+                print(f"✓ Linked Google account to existing email: {email}")
+            else:
+                # Create new user
+                user = db.create(
+                    data={
+                        'email': email,
+                        'name': name,
+                        'googleId': google_id,
+                        'profilePicture': profile_picture,
+                    }
+                )
+                print(f"✓ New user created via Google: {email}")
         
         # Connection stays open in shared client mode
         
@@ -227,9 +244,11 @@ def google_callback():
         return redirect(f'{frontend_url}?auth=success#input')
         
     except Exception as e:
+        import urllib.parse
+        error_details = urllib.parse.quote(str(e))
         print(f"✗ Google OAuth error: {str(e)}")
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
-        return redirect(f'{frontend_url}?error=oauth_failed#signup')
+        return redirect(f'{frontend_url}?error=oauth_failed&details={error_details}#signup')
 
 @auth_bp.route('/auth/user')
 def get_current_user():

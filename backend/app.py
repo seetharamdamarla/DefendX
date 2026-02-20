@@ -32,9 +32,13 @@ app = Flask(__name__)
 
 # Session configuration for OAuth
 app.secret_key = os.getenv('SECRET_KEY', 'dev_secret_key_change_in_production_12345')
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+
+import os
+is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('VERCEL') == '1'
+
+app.config['SESSION_COOKIE_SECURE'] = is_production 
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None' if is_production else 'Lax'
 
 # Initialize OAuth
 google_oauth = init_oauth(app)
