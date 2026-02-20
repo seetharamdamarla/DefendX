@@ -223,11 +223,13 @@ def google_callback():
         }
         
         # Redirect to frontend scan input page with success
-        return redirect('http://localhost:5173?auth=success#input')
+        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+        return redirect(f'{frontend_url}?auth=success#input')
         
     except Exception as e:
         print(f"✗ Google OAuth error: {str(e)}")
-        return redirect('http://localhost:5173?error=oauth_failed#signup')
+        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+        return redirect(f'{frontend_url}?error=oauth_failed#signup')
 
 @auth_bp.route('/auth/user')
 def get_current_user():
