@@ -8,7 +8,7 @@
         "start": "python app.py",
         "db:push": "prisma db push",
         "db:generate": "prisma generate",
-        "vercel-build": "pip install -r requirements.txt --break-system-packages && export PATH=\"$PATH:$HOME/.local/bin\" && prisma generate",
+        "vercel-build": "pip install -r requirements.txt --break-system-packages && python -m prisma generate",
         "postinstall": "prisma generate"
     },
     "keywords": [],

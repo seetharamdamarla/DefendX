@@ -1,5 +1,6 @@
 generator client {
-  provider             = "prisma-client-py"
+  provider             = "python -m prisma"
+  output               = "../prisma_client"
   interface            = "sync"
   recursive_type_depth = 5
 }

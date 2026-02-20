@@ -2,7 +2,7 @@ import json
 import uuid
 import asyncio
 from datetime import datetime
-from prisma import Prisma, Json
+from prisma_client import Prisma, Json
 
 # Single global instance to be shared across the application
 prisma = Prisma()
