@@ -1,6 +1,5 @@
 generator client {
   provider             = "python -m prisma"
-  output               = "../prisma_client"
   interface            = "sync"
   recursive_type_depth = 5
   binaryTargets        = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "linux-musl", "debian-openssl-3.0.x"]
