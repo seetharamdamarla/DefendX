@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LogoIcon from '../components/LogoIcon';
 import { useState, useEffect } from 'react';
-import { Loader2, ArrowRight, X, AlertOctagon } from 'lucide-react';
+import { Loader2, ArrowRight, X, AlertOctagon, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,6 +16,7 @@ export default function SignupPage({ onNavigate }: SignupPageProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     // Clear error after 5 seconds
     useEffect(() => {
@@ -122,15 +123,26 @@ export default function SignupPage({ onNavigate }: SignupPageProps) {
                             onChange={(e) => setEmail(e.target.value)}
                             className="bg-black/50 border-white/10 text-white placeholder:text-zinc-600 h-12 rounded-xl focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:border-purple-500/50 transition-all"
                         />
-                        <Input
-                            type="password"
-                            placeholder="Create a password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            minLength={6}
-                            className="bg-black/50 border-white/10 text-white placeholder:text-zinc-600 h-12 rounded-xl focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:border-purple-500/50 transition-all"
-                        />
+                        <div className="relative">
+                            <Input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Create a password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                minLength={6}
+                                className="bg-black/50 border-white/10 text-white placeholder:text-zinc-600 h-12 rounded-xl focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:border-purple-500/50 transition-all pr-12"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(v => !v)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                                tabIndex={-1}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                     </div>
 
                     <Button
