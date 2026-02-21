@@ -47,7 +47,7 @@ google_oauth = init_oauth(app)
 app.register_blueprint(auth_bp, url_prefix='/api')
 
 # Configure CORS - restrict in production
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://defendx-frontend.vercel.app')
 CORS(app, resources={r"/api/*": {"origins": FRONTEND_URL}}, supports_credentials=True)
 
 # Rate limiting to prevent abuse
