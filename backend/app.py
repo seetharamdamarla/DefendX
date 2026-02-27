@@ -204,10 +204,12 @@ def get_dashboard_data():
         }), 200
         
     except Exception as e:
-        print(f"Dashboard error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': 'Failed to load dashboard data'
+            'error': f'Failed to load dashboard data: {str(e)}',
+            'details': traceback.format_exc()
         }), 500
 
 

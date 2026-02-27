@@ -1,63 +1,26 @@
-"""
-Security Health Score Calculator
-
-Purpose: Calculate professional security health scores
-Method: Industry-standard CVSS-inspired scoring methodology
-
-This mimics how professional security teams calculate security posture:
-- NIST Cybersecurity Framework alignment
-- CVSS severity weighting
-- Attack surface consideration
-- Remediation tracking
-"""
-
 from typing import Dict, List, Any
 
-
 class SecurityHealthScoreCalculator:
-    """
-    Professional security health score calculation
     
-    Methodology:
-    - Based on CVSS severity ratings
-    - Weighted by vulnerability category
-    - Considers attack surface size
-    - Provides letter grade (A+ to F)
-    
-    Used by enterprise security teams worldwide.
-    """
-    
-    # CVSS-inspired severity weights (0-10 scale)
     SEVERITY_WEIGHTS = {
-        'CRITICAL': 10.0,  # New category for extremely severe issues
-        'HIGH': 7.5,       # SQL Injection, RCE, Auth Bypass
-        'MEDIUM': 4.0,     # XSS, CSRF, Info Disclosure
-        'LOW': 1.0,        # Security headers, fingerprinting
+        'CRITICAL': 10.0,  
+        'HIGH': 7.5,       
+        'MEDIUM': 4.0,     
+        'LOW': 1.0,        
     }
     
-    # Category risk multipliers (some vulnerabilities are worse than others)
     CATEGORY_MULTIPLIERS = {
-        'Injection': 1.5,                    # SQL Injection = Critical
-        'Sensitive Data Exposure': 1.4,       # Exposed secrets
-        'Broken Authentication': 1.4,         # Auth bypass
-        'Security Misconfiguration': 1.2,     # CORS, headers
-        'Directory/File Exposure': 1.3,       # Exposed paths
-        'XSS': 1.2,                          # Cross-site scripting
-        'Information Disclosure': 1.0,        # Server info
-        'Insecure Cookies': 1.1,             # Cookie issues
+        'Injection': 1.5,                    
+        'Sensitive Data Exposure': 1.4,       
+        'Broken Authentication': 1.4,         
+        'Security Misconfiguration': 1.2,     
+        'Directory/File Exposure': 1.3,       
+        'XSS': 1.2,                          
+        'Information Disclosure': 1.0,        
+        'Insecure Cookies': 1.1,             
     }
     
     def calculate_health_score(self, vulnerabilities: List[Dict]) -> Dict[str, Any]:
-        """
-        Calculate comprehensive security health score
-        
-        Returns:
-        - health_score (0-100): Overall security health
-        - letter_grade (A+ to F): Easy-to-understand grade
-        - risk_points: Total risk accumulated
-        - breakdown: Detailed scoring breakdown
-        - recommendations: Next steps
-        """
         
         if not vulnerabilities:
             # Perfect score - no vulnerabilities
@@ -132,19 +95,6 @@ class SecurityHealthScoreCalculator:
         }
     
     def _calculate_letter_grade(self, score: float) -> Dict[str, str]:
-        """
-        Convert numeric score to letter grade
-        
-        Professional grading scale:
-        A+ (95-100): Excellent security posture
-        A  (90-94):  Very good security
-        B+ (85-89):  Good security with minor issues
-        B  (80-84):  Acceptable with some concerns
-        C+ (75-79):  Fair, needs improvement
-        C  (70-74):  Below average, action needed
-        D  (60-69):  Poor security, urgent action required
-        F  (<60):    Critical security issues
-        """
         
         if score >= 95:
             return {
@@ -201,14 +151,8 @@ class SecurityHealthScoreCalculator:
         category_breakdown: Dict,
         health_score: float
     ) -> List[str]:
-        """
-        Generate actionable security recommendations
-        
-        Professional security advice based on findings
-        """
         recommendations = []
         
-        # Critical/High severity recommendations
         if severity_counts.get('CRITICAL', 0) > 0:
             recommendations.append(
                 f"URGENT: Address {severity_counts['CRITICAL']} critical "
@@ -221,7 +165,6 @@ class SecurityHealthScoreCalculator:
                 f"vulnerabilit{'y' if severity_counts['HIGH'] == 1 else 'ies'} within 24-48 hours"
             )
         
-        # Category-specific recommendations
         if 'Injection' in category_breakdown:
             recommendations.append(
                 "🔒 Implement parameterized queries to prevent SQL injection"
@@ -237,7 +180,6 @@ class SecurityHealthScoreCalculator:
                 "⚙️  Review and harden security configurations (CORS, headers)"
             )
         
-        # General recommendations based on score
         if health_score < 70:
             recommendations.append(
                 "📋 Schedule comprehensive security audit with your team"
@@ -260,14 +202,9 @@ class SecurityHealthScoreCalculator:
                 "📊 Schedule quarterly security reviews"
             )
         
-        return recommendations[:5]  # Limit to top 5 recommendations
+        return recommendations[:5]
     
     def get_severity_distribution_percentage(self, severity_counts: Dict) -> Dict[str, float]:
-        """
-        Calculate percentage distribution of vulnerabilities by severity
-        
-        Useful for charts and visualizations
-        """
         total = sum(severity_counts.values())
         if total == 0:
             return {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
