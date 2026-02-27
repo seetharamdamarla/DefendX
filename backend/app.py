@@ -89,7 +89,7 @@ def health_check():
 
 
 @app.route('/api/scan', methods=['POST'])
-@limiter.limit("3 per hour")  # Strict limit on actual scans
+@limiter.limit("60 per hour")  # Relaxed limit for testing
 def start_scan():
     """
     Initiate a security scan on a target URL
