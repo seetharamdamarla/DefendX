@@ -211,13 +211,13 @@ class SecurityHealthScoreCalculator:
         # Critical/High severity recommendations
         if severity_counts.get('CRITICAL', 0) > 0:
             recommendations.append(
-                f"🚨 URGENT: Address {severity_counts['CRITICAL']} critical "
+                f"URGENT: Address {severity_counts['CRITICAL']} critical "
                 f"vulnerabilit{'y' if severity_counts['CRITICAL'] == 1 else 'ies'} immediately"
             )
         
         if severity_counts.get('HIGH', 0) > 0:
             recommendations.append(
-                f"⚠️  Fix {severity_counts['HIGH']} high-severity "
+                f" Fix {severity_counts['HIGH']} high-severity "
                 f"vulnerabilit{'y' if severity_counts['HIGH'] == 1 else 'ies'} within 24-48 hours"
             )
         
@@ -243,18 +243,18 @@ class SecurityHealthScoreCalculator:
                 "📋 Schedule comprehensive security audit with your team"
             )
             recommendations.append(
-                "🛡️  Consider implementing a Web Application Firewall (WAF)"
+                " Consider implementing a Web Application Firewall (WAF)"
             )
         elif health_score < 85:
             recommendations.append(
-                "✅ Continue addressing medium-severity issues"
+                "Continue addressing medium-severity issues"
             )
             recommendations.append(
                 "🔄 Implement regular security scanning in CI/CD pipeline"
             )
         else:
             recommendations.append(
-                "🎯 Maintain current security practices"
+                "Maintain current security practices"
             )
             recommendations.append(
                 "📊 Schedule quarterly security reviews"

@@ -268,9 +268,9 @@ Remediation Steps:
    - Or use: curl -I [url] and inspect Set-Cookie headers
 
 4. PRODUCTION CHECKLIST
-   ✓ All cookies have HttpOnly (except where JS access is required)
-   ✓ All cookies have Secure flag (HTTPS only)
-   ✓ Session cookies have SameSite attribute
+   All cookies have HttpOnly (except where JS access is required)
+   All cookies have Secure flag (HTTPS only)
+   Session cookies have SameSite attribute
         """.strip()
         
         return remediation

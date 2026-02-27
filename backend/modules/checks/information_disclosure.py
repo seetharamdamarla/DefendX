@@ -452,10 +452,10 @@ def remove_header(response):
 URGENT REMEDIATION REQUIRED:
 
 1. IMMEDIATE ACTION (Within 1 Hour)
-   ⚠️  ROTATE THE EXPOSED {secret_type.upper()} IMMEDIATELY
-   ⚠️  Revoke the old secret from your provider
-   ⚠️  Generate new secret
-   ⚠️  Update application with new secret
+    ROTATE THE EXPOSED {secret_type.upper()} IMMEDIATELY
+    Revoke the old secret from your provider
+    Generate new secret
+    Update application with new secret
 
 2. REMOVE FROM CODE
    - Delete hardcoded secret from source code

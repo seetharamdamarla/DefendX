@@ -257,14 +257,14 @@ Remediation Steps:
 
 2. SECURE CORS CONFIGURATION
 
-❌ INSECURE:
+INSECURE:
 ```javascript
 // Reflects any origin
 res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
 res.setHeader('Access-Control-Allow-Credentials', 'true');
 ```
 
-✅ SECURE (Whitelist Approach):
+SECURE (Whitelist Approach):
 ```javascript
 const allowedOrigins = [
   'https://yourdomain.com',

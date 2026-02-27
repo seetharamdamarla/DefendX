@@ -285,17 +285,17 @@ Remediation Steps:
 
 Python (Secure):
 ```python
-# ❌ VULNERABLE
+# VULNERABLE
 query = f"SELECT * FROM users WHERE id = {user_input}"
 
-# ✅ SECURE (Parameterized)
+# SECURE (Parameterized)
 query = "SELECT * FROM users WHERE id = ?"
 cursor.execute(query, (user_input,))
 ```
 
 Node.js/Prisma (Secure):
 ```javascript
-// ✅ SECURE (Prisma automatically prevents SQLi)
+// SECURE (Prisma automatically prevents SQLi)
 const user = await prisma.user.findUnique({
   where: { id: userInput }
 });
